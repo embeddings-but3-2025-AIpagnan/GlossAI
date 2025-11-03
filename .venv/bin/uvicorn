@@ -1,4 +1,4 @@
-#!/home/fabio/SAE/GlossAI/.venv/bin/python3
+#!./.venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys
