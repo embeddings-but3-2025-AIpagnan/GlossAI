@@ -1,4 +1,4 @@
-# App
+# GlossAI
 Une application en Python **FastAPI** permettant d'implémenter les fonctionnalités intelligentes du LLM.
 
 ---
@@ -9,6 +9,8 @@ Une application en Python **FastAPI** permettant d'implémenter les fonctionnali
 - Python 3.9+ installé  
 - pip (normalement installé avec Python)
 - FastAPI et Uvicorn installés
+- astro installé (npm install astro)
+- venv installé
 
 ---
 
