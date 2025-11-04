@@ -1,25 +1,62 @@
+<!DOCTYPE html>
 <html lang="fr">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hello</title>
-    <link rel="stylesheet" href="/static/css/style.css">
-  </head>
-  <body>
-    
-    <table id="table-1" border="1">
-      <thead>
-        <tr>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- Le tableau sera vide initialement -->
-      </tbody>
-    </table>
-
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GlossAI</title>
+</head>
+<body>
+    <div>
+        <header>
+            <h1>GlossAI</h1>
+            <div>
+                <div>
+                    <input type="text" placeholder="Rechercher terme du glossaire">
+                </div>
+                <button>Nouveau terme</button>
+            </div>
+        </header>
+        
+        <hr>
+        
+        <div>
+            <span>3 Termes</span>
+        </div>
+        
+        <div>
+            <div>Glossaire</div>
+            <div>
+                <button>Trier</button>
+                <button>Filtrer</button>
+            </div>
+        </div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Terme</th>
+                    <th>Définition</th>
+                    <th>Synonymes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Plateau</td>
+                    <td>Grille composée de cases permettant de placer des jetons lettres</td>
+                    <td>scène, plat</td>
+                </tr>
+                <tr>
+                    <td>Jetons</td>
+                    <td>Entrés stockant une lettre, pouvant être placés sur une case</td>
+                    <td>scène, plat</td>
+                </tr>
+                <tr>
+                    <td>Règles</td>
+                    <td>Fiche comportant les différentes règles du jeu</td>
+                    <td>Limites, interdictions</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
 </html>
