@@ -9,20 +9,18 @@ from fastapi.staticfiles import StaticFiles
 app = FastAPI(title="GlossAI")
 
 
-def build_astro():
-    """Build Astro à chaque lancement"""
+def build_astro() -> None:
+    """Build Astro à chaque lancement."""
     print("🚀 Building Astro...")
 
     if os.name == "nt":
         # Utiliser Path pour une meilleure gestion des chemins
         astro_frontend_path = Path("astro-frontend")
-        dist_path = astro_frontend_path / "dist"
 
         # Vérifier si le dossier astro-frontend existe
         if not astro_frontend_path.exists():
             print("❌ Dossier astro-frontend introuvable")
             print(f"   Chemin recherché: {astro_frontend_path.absolute()}")
-            return False
 
         try:
             print("🔨 Construction de l'application Astro...")
