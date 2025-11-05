@@ -65,10 +65,10 @@ dist_path = astro_frontend_path / "dist"
 
 if dist_path.exists():
     # Monter les assets
-    assets_path = dist_path / "assets"
+    assets_path = dist_path / "static"
     if assets_path.exists():
-        app.mount("/assets", StaticFiles(directory=str(assets_path)), name="assets")
-        print("✅ Assets montés")
+        app.mount("/static", StaticFiles(directory=str(assets_path)), name="static")
+        print("✅ Assets static montés")
 
     # Monter _astro
     astro_build_path = dist_path / "_astro"
