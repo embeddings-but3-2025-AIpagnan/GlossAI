@@ -114,6 +114,12 @@ import "../styles/style.css";
                                 placeholder="Entrez le nom du terme métier"
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all bg-white"
                             />
+                            <p
+                                id="termError"
+                                class="text-red-600 text-sm mt-1 hidden"
+                            >
+                                Le champ est obligatoire !
+                            </p>
                         </div>
 
                         <div>
@@ -128,6 +134,12 @@ import "../styles/style.css";
                                 rows="4"
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all resize-none bg-white"
                             ></textarea>
+                            <p
+                                id="definitionError"
+                                class="text-red-600 text-sm mt-1 hidden"
+                            >
+                                Le champ est obligatoire !
+                            </p>
                         </div>
 
                         <div>
@@ -151,6 +163,11 @@ import "../styles/style.css";
                                     <!-- Tags will be inserted here -->
                                 </div>
                             </div>
+                            <p
+                                id="synonymError"
+                                class="text-red-600 text-sm mt-1 hidden"
+                            >
+                            </p>
 
                             <button
                                 id="suggestBtn"
@@ -262,13 +279,56 @@ import "../styles/style.css";
             // Add synonym from input
             function addSynonymFromInput() {
                 const synonymInput = document.getElementById("synonymInput");
+                const termInput = document.getElementById("termInput");
+                const synonymError = document.getElementById("synonymError");
                 const synonym = synonymInput.value.trim();
+                const term = termInput.value.trim();
 
-                if (synonym && !currentSynonyms.includes(synonym)) {
-                    currentSynonyms.push(synonym);
-                    renderSynonymTags();
-                    synonymInput.value = "";
+                // Clear previous error
+                synonymError.classList.add("hidden");
+                synonymInput.classList.remove("border-red-500");
+
+                if (!synonym) return;
+
+                // Check if synonym equals the term
+                if (synonym.toLowerCase() === term.toLowerCase()) {
+                    synonymError.textContent =
+                        "Le synonyme ne peut pas être identique au terme !";
+                    synonymError.classList.remove("hidden");
+                    synonymInput.classList.add("border-red-500");
+                    return;
                 }
+
+                // Check if synonym already exists
+                if (currentSynonyms.includes(synonym)) {
+                    synonymError.textContent =
+                        "Ce synonyme a déjà été ajouté !";
+                    synonymError.classList.remove("hidden");
+                    synonymInput.classList.add("border-red-500");
+                    return;
+                }
+
+                currentSynonyms.push(synonym);
+                renderSynonymTags();
+                synonymInput.value = "";
+            }
+
+            // Clear all errors
+            function clearErrors() {
+                document.getElementById("termError").classList.add("hidden");
+                document
+                    .getElementById("definitionError")
+                    .classList.add("hidden");
+                document.getElementById("synonymError").classList.add("hidden");
+                document
+                    .getElementById("termInput")
+                    .classList.remove("border-red-500");
+                document
+                    .getElementById("definitionInput")
+                    .classList.remove("border-red-500");
+                document
+                    .getElementById("synonymInput")
+                    .classList.remove("border-red-500");
             }
 
             // Modal functions
@@ -295,6 +355,7 @@ import "../styles/style.css";
                 document.getElementById("synonymInput").value = "";
                 currentSynonyms = [];
                 renderSynonymTags();
+                clearErrors();
             }
 
             function showToast() {
@@ -318,30 +379,77 @@ import "../styles/style.css";
                 }
             });
 
-            submitBtn.addEventListener("click", () => {
-                const term = document.getElementById("termInput").value.trim();
-                const definition = document
-                    .getElementById("definitionInput")
-                    .value.trim();
+            // Clear synonym error when typing
+            synonymInput.addEventListener("input", () => {
+                document.getElementById("synonymError").classList.add("hidden");
+                synonymInput.classList.remove("border-red-500");
+            });
 
-                if (term && definition) {
-                    terms.push({
-                        id: nextId++,
-                        term,
-                        definition,
-                        synonyms:
-                            currentSynonyms.length > 0
-                                ? [...currentSynonyms]
-                                : [],
-                    });
-                    saveTerms();
-                    renderTable();
-                    closeModal();
-                } else {
-                    alert(
-                        "Veuillez remplir les champs obligatoires (Mot et Définition)",
-                    );
+            // Clear errors when typing in required fields
+            document
+                .getElementById("termInput")
+                .addEventListener("input", () => {
+                    document
+                        .getElementById("termError")
+                        .classList.add("hidden");
+                    document
+                        .getElementById("termInput")
+                        .classList.remove("border-red-500");
+                });
+
+            document
+                .getElementById("definitionInput")
+                .addEventListener("input", () => {
+                    document
+                        .getElementById("definitionError")
+                        .classList.add("hidden");
+                    document
+                        .getElementById("definitionInput")
+                        .classList.remove("border-red-500");
+                });
+
+            submitBtn.addEventListener("click", () => {
+                const termInput = document.getElementById("termInput");
+                const definitionInput =
+                    document.getElementById("definitionInput");
+                const term = termInput.value.trim();
+                const definition = definitionInput.value.trim();
+
+                // Clear previous errors
+                clearErrors();
+
+                let hasError = false;
+
+                // Validate term
+                if (!term) {
+                    document
+                        .getElementById("termError")
+                        .classList.remove("hidden");
+                    termInput.classList.add("border-red-500");
+                    hasError = true;
                 }
+
+                // Validate definition
+                if (!definition) {
+                    document
+                        .getElementById("definitionError")
+                        .classList.remove("hidden");
+                    definitionInput.classList.add("border-red-500");
+                    hasError = true;
+                }
+
+                if (hasError) return;
+
+                terms.push({
+                    id: nextId++,
+                    term,
+                    definition,
+                    synonyms:
+                        currentSynonyms.length > 0 ? [...currentSynonyms] : [],
+                });
+                saveTerms();
+                renderTable();
+                closeModal();
             });
 
             // Close modal on Escape key
