@@ -213,8 +213,7 @@ import "../styles/style.css";
 
         <script>
             // Load terms from localStorage or use defaults
-            let terms =
-                JSON.parse(localStorage.getItem("glossaryTerms")) || [];
+            let terms = JSON.parse(localStorage.getItem("glossaryTerms")) || [];
             let nextId = Math.max(...terms.map((t) => t.id), 0) + 1;
             let currentSynonyms = [];
 
@@ -324,17 +323,6 @@ import "../styles/style.css";
                 const definition = document
                     .getElementById("definitionInput")
                     .value.trim();
-
-                // Add any pending synonym from input
-                const pendingSynonym = document
-                    .getElementById("synonymInput")
-                    .value.trim();
-                if (
-                    pendingSynonym &&
-                    !currentSynonyms.includes(pendingSynonym)
-                ) {
-                    currentSynonyms.push(pendingSynonym);
-                }
 
                 if (term && definition) {
                     terms.push({
