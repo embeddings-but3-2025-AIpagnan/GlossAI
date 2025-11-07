@@ -25,7 +25,7 @@ Your response MUST only include the synonyms separated by commas.
             think=False,
         )
     ).response
-    response = response.replace('"', "").replace("'", "")
+    response = response.replace('"', "").replace("'", "").replace(".", "")
 
     return list(
         {
