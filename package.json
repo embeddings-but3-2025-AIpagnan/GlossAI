@@ -1,0 +1,12 @@
+{
+  "name": "my-app",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "concurrently \"python backend/main.py\" \"cargo tauri dev\"",
+    "build": "npm run build --prefix frontend && cargo tauri build",
+    "tauri": "cargo tauri"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

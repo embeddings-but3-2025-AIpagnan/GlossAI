@@ -1,6 +1,0 @@
-fastapi
-uvicorn
-aiohttp
-numpy
-ollama
-scipy

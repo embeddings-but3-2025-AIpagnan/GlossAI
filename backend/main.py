@@ -2,12 +2,11 @@ import os
 import subprocess
 from pathlib import Path
 
+from ai import get_synonyms
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-
-from ai import get_synonyms
 
 app = FastAPI(title="GlossAI")
 
@@ -17,13 +16,11 @@ def build_astro() -> None:
     print("🚀 Building Astro...")
 
     if os.name == "nt":
-        # Utiliser Path pour une meilleure gestion des chemins
-        astro_frontend_path = Path("astro-frontend")
+        frontend_path = Path("frontend")
 
-        # Vérifier si le dossier astro-frontend existe
-        if not astro_frontend_path.exists():
-            print("❌ Dossier astro-frontend introuvable")
-            print(f"   Chemin recherché: {astro_frontend_path.absolute()}")
+        if not frontend_path.exists():
+            print("❌ Dossier frontend introuvable")
+            print(f"   Chemin recherché: {frontend_path.absolute()}")
 
         try:
             print("🔨 Construction de l'application Astro...")
@@ -31,7 +28,7 @@ def build_astro() -> None:
             build_result = subprocess.run(
                 ["npm", "run", "build"],
                 check=False,
-                cwd=astro_frontend_path,
+                cwd=frontend_path,
                 capture_output=True,
                 text=True,
                 shell=True,  # Important pour Windows
@@ -47,7 +44,7 @@ def build_astro() -> None:
         try:
             # Aller dans le dossier Astro et builder
             original_dir = os.getcwd()
-            os.chdir("astro-frontend")
+            os.chdir("frontend")
             subprocess.run(["npm", "run", "build"], check=True)
             os.chdir(original_dir)
             print("✅ Build Astro réussi!")
@@ -55,7 +52,7 @@ def build_astro() -> None:
             print(f"❌ Erreur lors du build Astro: {e}")
             os.chdir(original_dir)
         except FileNotFoundError:
-            print("❌ Dossier astro-frontend introuvable")
+            print("❌ Dossier frontend introuvable")
             os.chdir(original_dir)
 
 
@@ -75,7 +72,7 @@ class SynonymResponse(BaseModel):
 
 
 # Monter les dossiers statiques seulement si le build a réussi
-astro_frontend_path = Path("astro-frontend")
+astro_frontend_path = Path("frontend")
 dist_path = astro_frontend_path / "dist"
 
 if dist_path.exists():
@@ -93,17 +90,10 @@ if dist_path.exists():
 else:
     print("⚠️  Dossier dist introuvable - le frontend ne sera pas disponible")
 
-# Monter le dossier static si il existe
-static_path = Path("static")
-if static_path.exists():
-    app.mount("/static", StaticFiles(directory="static"), name="static")
-    print("✅ Static files montés")
 
-
-# Route principale - sert le fichier Astro
 @app.get("/")
 async def read_index():
-    index_path = Path("astro-frontend/dist/index.html")
+    index_path = Path("frontend/dist/index.html")
     if index_path.exists():
         return FileResponse(str(index_path))
     raise HTTPException(
@@ -112,7 +102,6 @@ async def read_index():
     )
 
 
-# Route pour les suggestions IA
 @app.post("/api/suggest", response_model=SynonymResponse)
 async def suggest_synonyms(request: SynonymRequest):
     try:
@@ -135,4 +124,4 @@ async def suggest_synonyms(request: SynonymRequest):
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=32791)
