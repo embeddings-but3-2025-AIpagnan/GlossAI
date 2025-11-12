@@ -112,21 +112,3 @@ function parseJSON(jsonContent) {
   }
 }
 
-const sampleData = [
-  ["API", "Interface de programmation applicative", ["Application Programming Interface"]],
-  ["HTTP", "Protocole de transfert hypertexte", ["Hypertext Transfer Protocol"]]
-];
-
-// Génération Markdown avec titre personnalisé
-generateMarkdown(sampleData, ["Terme", "Description", "Alias"], "Mon Glossaire Personnalisé");
-
-// Génération JSON
-generateJSON(sampleData, ["Terme", "Description", "Alias"], "Mon Glossaire JSON");
-
-// Pour parser un markdown existant
-// const markdownContent = `# Mon Glossaire...`;
-// const parsed = parseMarkdown(markdownContent);
-
-// Pour parser un JSON existant
-// const jsonContent = `{"title": "Mon Glossaire"...}`;
-// const parsed = parseJSON(jsonContent);
