@@ -134,3 +134,28 @@ textarea:focus-visible {
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
 }
+
+/* Styles pour la prévisualisation */
+#exportPreview {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    line-height: 1.4;
+}
+
+/* Scrollbar personnalisée pour la prévisualisation */
+#exportPreview::-webkit-scrollbar {
+    width: 8px;
+}
+
+#exportPreview::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+#exportPreview::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+#exportPreview::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}

@@ -215,41 +215,72 @@ import "../styles/style.css";
         <!-- Modal Export -->
         <div id="exportModal" class="hidden fixed inset-0 z-50">
             <div
-                class="modal-overlay absolute inset-0 bg-black bg-opacity-30 backdrop-blur-sm"
+                class="modal-overlay absolute inset-0 bg-opacity-30 backdrop-blur-sm"
                 id="exportModalOverlay"
             >
             </div>
             <div class="flex items-center justify-center min-h-screen p-4">
                 <div
-                    class="modal-content bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 relative"
+                    class="modal-content bg-gray-100 rounded-3xl shadow-2xl max-w-5xl w-full p-10 relative"
                 >
-                    <h3 class="text-2xl font-semibold text-gray-900 mb-6">
-                        Export Glossary
+                    <h3 class="text-4xl font-bold text-gray-900 mb-8">
+                        Export
                     </h3>
 
-                    <div class="space-y-4 mb-6">
-                        <p class="text-gray-600">Choose the export format:</p>
+                    <div class="bg-white rounded-2xl p-8 shadow-sm">
+                        <!-- Preview section header with tabs -->
+                        <div class="flex justify-between items-center mb-6">
+                            <h4 class="text-xl font-semibold text-gray-900">
+                                Preview of the file
+                            </h4>
+                            <div class="flex gap-2 bg-gray-200 p-1 rounded-lg">
+                                <button
+                                    id="previewMarkdownBtn"
+                                    class="px-6 py-2 rounded-md font-medium transition-colors bg-white text-gray-900 shadow-sm"
+                                >
+                                    Markdown
+                                </button>
+                                <button
+                                    id="previewJsonBtn"
+                                    class="px-6 py-2 rounded-md font-medium transition-colors text-gray-600 hover:text-gray-900"
+                                >
+                                    json
+                                </button>
+                            </div>
+                        </div>
 
-                        <div class="flex gap-4">
-                            <button
-                                id="exportMarkdownBtn"
-                                class="flex-1 bg-primary hover-bg-primary text-white px-6 py-3 rounded-lg font-medium transition-colors"
-                            >
-                                Markdown
-                            </button>
-                            <button
-                                id="exportJsonBtn"
-                                class="flex-1 bg-primary hover-bg-primary text-white px-6 py-3 rounded-lg font-medium transition-colors"
-                            >
-                                JSON
-                            </button>
+                        <!-- Preview content -->
+                        <div
+                            id="exportPreview"
+                            class="bg-gray-50 border border-gray-200 rounded-xl p-6 min-h-[400px] max-h-[400px] overflow-auto font-mono text-sm whitespace-pre-wrap text-gray-700"
+                        >
+                            <!-- Preview content will appear here -->
+                            <p class="text-gray-400 text-center py-20">
+                                Select a format to preview
+                            </p>
                         </div>
                     </div>
 
-                    <div class="flex justify-end gap-3">
+                    <!-- Export buttons -->
+                    <div class="flex gap-4 mt-8 justify-center">
+                        <button
+                            id="exportMarkdownBtn"
+                            class="bg-primary hover-bg-primary text-white px-10 py-4 rounded-xl font-semibold transition-colors text-lg shadow-lg"
+                        >
+                            Download Markdown
+                        </button>
+                        <button
+                            id="exportJsonBtn"
+                            class="bg-primary hover-bg-primary text-white px-10 py-4 rounded-xl font-semibold transition-colors text-lg shadow-lg"
+                        >
+                            Download JSON
+                        </button>
+                    </div>
+
+                    <div class="flex justify-center mt-6">
                         <button
                             id="exportCancelBtn"
-                            class="px-6 py-2 border border-gray-300 rounded-lg font-medium text-gray-900 hover:bg-gray-50 transition-colors"
+                            class="px-8 py-3 border border-gray-300 rounded-xl font-medium text-gray-900 hover:bg-gray-50 transition-colors"
                         >
                             Cancel
                         </button>
@@ -261,7 +292,7 @@ import "../styles/style.css";
         <!-- Modal Import -->
         <div id="importModal" class="hidden fixed inset-0 z-50">
             <div
-                class="modal-overlay absolute inset-0 bg-black bg-opacity-30 backdrop-blur-sm"
+                class="modal-overlay absolute inset-0 bg-opacity-30 backdrop-blur-sm"
                 id="importModalOverlay"
             >
             </div>
@@ -366,6 +397,14 @@ import "../styles/style.css";
         </div>
 
         <script>
+            // ===== VARIABLES GLOBALES =====
+            let terms = JSON.parse(localStorage.getItem("glossaryTerms")) || [];
+            let nextId = Math.max(...terms.map((t) => t.id), 0) + 1;
+            let currentSynonyms = [];
+            let currentPreviewFormat = null;
+            let aiSuggestions = [];
+
+            // ===== ÉLÉMENTS DU DOM =====
             // Modal Export elements
             const exportModal = document.getElementById("exportModal");
             const exportBtn = document.getElementById("exportBtn");
@@ -375,6 +414,10 @@ import "../styles/style.css";
             const exportMarkdownBtn =
                 document.getElementById("exportMarkdownBtn");
             const exportJsonBtn = document.getElementById("exportJsonBtn");
+            const previewMarkdownBtn =
+                document.getElementById("previewMarkdownBtn");
+            const previewJsonBtn = document.getElementById("previewJsonBtn");
+            const exportPreview = document.getElementById("exportPreview");
 
             // Modal Import elements
             const importModal = document.getElementById("importModal");
@@ -387,10 +430,157 @@ import "../styles/style.css";
                 document.getElementById("importConfirmBtn");
             const importError = document.getElementById("importError");
 
-            // Export modal functions
+            // Modal Add Term elements
+            const modal = document.getElementById("modal");
+            const addTermBtn = document.getElementById("addTermBtn");
+            const cancelBtn = document.getElementById("cancelBtn");
+            const submitBtn = document.getElementById("submitBtn");
+            const modalOverlay = document.getElementById("modalOverlay");
+            const suggestBtn = document.getElementById("suggestBtn");
+            const toast = document.getElementById("toast");
+            const synonymInput = document.getElementById("synonymInput");
+
+            // ===== FONCTIONS DE BASE =====
+            function saveTerms() {
+                localStorage.setItem("glossaryTerms", JSON.stringify(terms));
+            }
+
+            function renderTable() {
+                const tbody = document.getElementById("glossaryTable");
+                tbody.innerHTML = terms
+                    .map(
+                        (term) => `
+            <tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-6 py-4 font-medium text-gray-900">${term.term}</td>
+                <td class="px-6 py-4 text-gray-700">${term.definition}</td>
+                <td class="px-6 py-4 text-gray-700">${Array.isArray(term.synonyms) ? term.synonyms.join(", ") : term.synonyms}</td>
+            </tr>
+        `,
+                    )
+                    .join("");
+            }
+
+            function renderSynonymTags() {
+                const tagsContainer = document.getElementById("synonymTags");
+                tagsContainer.innerHTML = currentSynonyms
+                    .map(
+                        (syn, index) => `
+            <span class="inline-flex items-center gap-2 px-3 py-1 bg-gray-200 text-gray-800 rounded-md text-sm">
+                ${syn}
+                <button onclick="removeSynonym(${index})" class="text-gray-600 hover:text-gray-900 font-bold">×</button>
+            </span>
+        `,
+                    )
+                    .join("");
+            }
+
+            // ===== FONCTIONS D'EXPORT =====
+            function getExportData() {
+                return terms.map((term) => [
+                    term.term,
+                    term.definition,
+                    Array.isArray(term.synonyms) ? term.synonyms : [],
+                ]);
+            }
+
+            async function updatePreview(format) {
+                try {
+                    const { generateMarkdownString, generateJSONString } =
+                        await import("../lib/export_documents.js");
+                    const exportData = getExportData();
+                    let previewContent = "";
+
+                    if (format === "markdown") {
+                        previewContent = generateMarkdownString(
+                            exportData,
+                            ["Word", "Definition", "Synonyms"],
+                            "Glossary",
+                        );
+                    } else if (format === "json") {
+                        previewContent = generateJSONString(
+                            exportData,
+                            ["Word", "Definition", "Synonyms"],
+                            "Glossary",
+                        );
+                    }
+
+                    exportPreview.textContent = previewContent;
+                    currentPreviewFormat = format;
+
+                    // Mettre à jour les styles des boutons de prévisualisation
+                    if (format === "markdown") {
+                        previewMarkdownBtn.classList.remove(
+                            "text-gray-600",
+                            "hover:text-gray-900",
+                        );
+                        previewMarkdownBtn.classList.add(
+                            "bg-white",
+                            "text-gray-900",
+                            "shadow-sm",
+                        );
+                        previewJsonBtn.classList.remove(
+                            "bg-white",
+                            "text-gray-900",
+                            "shadow-sm",
+                        );
+                        previewJsonBtn.classList.add(
+                            "text-gray-600",
+                            "hover:text-gray-900",
+                        );
+                    } else {
+                        previewJsonBtn.classList.remove(
+                            "text-gray-600",
+                            "hover:text-gray-900",
+                        );
+                        previewJsonBtn.classList.add(
+                            "bg-white",
+                            "text-gray-900",
+                            "shadow-sm",
+                        );
+                        previewMarkdownBtn.classList.remove(
+                            "bg-white",
+                            "text-gray-900",
+                            "shadow-sm",
+                        );
+                        previewMarkdownBtn.classList.add(
+                            "text-gray-600",
+                            "hover:text-gray-900",
+                        );
+                    }
+                } catch (error) {
+                    console.error("Preview error:", error);
+                    exportPreview.textContent =
+                        "Error generating preview: " + error.message;
+                }
+            }
+
+            // ===== FONCTIONS DE MODALES =====
             function openExportModal() {
                 exportModal.classList.remove("hidden");
                 document.body.style.overflow = "hidden";
+                exportPreview.innerHTML =
+                    '<p class="text-gray-400 text-center py-20">Select a format to preview</p>';
+                currentPreviewFormat = null;
+
+                // Reset preview button styles
+                previewMarkdownBtn.classList.remove(
+                    "text-gray-600",
+                    "hover:text-gray-900",
+                );
+                previewMarkdownBtn.classList.add(
+                    "bg-white",
+                    "text-gray-900",
+                    "shadow-sm",
+                );
+                previewJsonBtn.classList.remove(
+                    "bg-white",
+                    "text-gray-900",
+                    "shadow-sm",
+                );
+                previewJsonBtn.classList.add(
+                    "text-gray-600",
+                    "hover:text-gray-900",
+                );
             }
 
             function closeExportModal() {
@@ -398,7 +588,6 @@ import "../styles/style.css";
                 document.body.style.overflow = "auto";
             }
 
-            // Import modal functions
             function openImportModal() {
                 importModal.classList.remove("hidden");
                 document.body.style.overflow = "hidden";
@@ -412,122 +601,44 @@ import "../styles/style.css";
                 importError.classList.add("hidden");
             }
 
-            // Event listeners for modals
-            exportBtn.addEventListener("click", openExportModal);
-            exportCancelBtn.addEventListener("click", closeExportModal);
-            exportModalOverlay.addEventListener("click", closeExportModal);
+            function openModal() {
+                modal.classList.remove("hidden");
+                document.body.style.overflow = "hidden";
+            }
 
-            importBtn.addEventListener("click", openImportModal);
-            importCancelBtn.addEventListener("click", closeImportModal);
-            importModalOverlay.addEventListener("click", closeImportModal);
+            function closeModal() {
+                modal.classList.add("hidden");
+                document.body.style.overflow = "auto";
+                document.getElementById("termInput").value = "";
+                document.getElementById("definitionInput").value = "";
+                document.getElementById("synonymInput").value = "";
+                currentSynonyms = [];
+                aiSuggestions = [];
+                renderSynonymTags();
+                document
+                    .getElementById("aiSuggestionsContainer")
+                    .classList.add("hidden");
+                clearErrors();
+            }
 
-            // File input click handler
-            document
-                .querySelector("#importModal .border-dashed")
-                .addEventListener("click", () => {
-                    importFileInput.click();
-                });
+            // ===== FONCTIONS UTILITAIRES =====
+            function clearErrors() {
+                document.getElementById("termError").classList.add("hidden");
+                document
+                    .getElementById("definitionError")
+                    .classList.add("hidden");
+                document.getElementById("synonymError").classList.add("hidden");
+                document
+                    .getElementById("termInput")
+                    .classList.remove("border-red-500");
+                document
+                    .getElementById("definitionInput")
+                    .classList.remove("border-red-500");
+                document
+                    .getElementById("synonymInput")
+                    .classList.remove("border-red-500");
+            }
 
-            // Export functions
-            // Export functions - Version avec débogage
-            exportMarkdownBtn.addEventListener("click", async () => {
-                try {
-                    console.log("Starting Markdown export...");
-
-                    const { generateMarkdown } = await import(
-                        "../lib/export_documents.js"
-                    );
-                    console.log("generateMarkdown function loaded");
-
-                    const exportData = terms.map((term) => [
-                        term.term,
-                        term.definition,
-                        Array.isArray(term.synonyms) ? term.synonyms : [],
-                    ]);
-                    console.log("Export data prepared:", exportData);
-
-                    generateMarkdown(exportData);
-                    console.log("Markdown export completed");
-
-                    closeExportModal();
-                    showSuccessMessage("Glossary exported as Markdown!");
-                } catch (error) {
-                    console.error("Export error details:", error);
-                    console.error("Error stack:", error.stack);
-                    showErrorMessage(
-                        "Error exporting glossary: " + error.message,
-                    );
-                }
-            });
-
-            exportJsonBtn.addEventListener("click", async () => {
-                try {
-                    const { generateJSON } = await import(
-                        "../lib/export_documents.js"
-                    );
-
-                    const exportData = terms.map((term) => [
-                        term.term,
-                        term.definition,
-                        Array.isArray(term.synonyms) ? term.synonyms : [],
-                    ]);
-
-                    generateJSON(exportData);
-                    closeExportModal();
-                    showSuccessMessage("Glossary exported as JSON!");
-                } catch (error) {
-                    console.error("Export error:", error);
-                    showErrorMessage("Error exporting glossary");
-                }
-            });
-
-            // Import function
-            importConfirmBtn.addEventListener("click", async () => {
-                const file = importFileInput.files[0];
-
-                if (!file) {
-                    importError.textContent = "Please select a file";
-                    importError.classList.remove("hidden");
-                    return;
-                }
-
-                const fileExtension = file.name.split(".").pop().toLowerCase();
-
-                if (!["md", "json"].includes(fileExtension)) {
-                    importError.textContent =
-                        "Please select a .md or .json file";
-                    importError.classList.remove("hidden");
-                    return;
-                }
-
-                try {
-                    const fileContent = await readFileAsText(file);
-
-                    if (fileExtension === "md") {
-                        const { parseMarkdown } = await import(
-                            "../lib/export_documents.js"
-                        );
-                        const parsedData = parseMarkdown(fileContent);
-                        await importGlossaryData(parsedData);
-                    } else {
-                        const { parseJSON } = await import(
-                            "../lib/export_documents.js"
-                        );
-                        const parsedData = parseJSON(fileContent);
-                        await importGlossaryData(parsedData);
-                    }
-
-                    closeImportModal();
-                    showSuccessMessage("Glossary imported successfully!");
-                } catch (error) {
-                    console.error("Import error:", error);
-                    importError.textContent =
-                        "Error importing file: " + error.message;
-                    importError.classList.remove("hidden");
-                }
-            });
-
-            // Helper function to read file as text
             function readFileAsText(file) {
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
@@ -538,17 +649,189 @@ import "../styles/style.css";
                 });
             }
 
-            // Function to import glossary data
+            // ===== FONCTIONS POUR LES SYNONYMES =====
+            window.removeSynonym = function (index) {
+                currentSynonyms.splice(index, 1);
+                renderSynonymTags();
+            };
+
+            function addSynonymFromInput() {
+                const synonymInput = document.getElementById("synonymInput");
+                const termInput = document.getElementById("termInput");
+                const synonymError = document.getElementById("synonymError");
+                const synonym = synonymInput.value.trim();
+                const term = termInput.value.trim();
+
+                synonymError.classList.add("hidden");
+                synonymInput.classList.remove("border-red-500");
+
+                if (!synonym) return;
+
+                if (synonym.toLowerCase() === term.toLowerCase()) {
+                    synonymError.textContent =
+                        "The synonym cannot be identical to the term!";
+                    synonymError.classList.remove("hidden");
+                    synonymInput.classList.add("border-red-500");
+                    return;
+                }
+
+                if (currentSynonyms.includes(synonym)) {
+                    synonymError.textContent =
+                        "This synonym has already been added!";
+                    synonymError.classList.remove("hidden");
+                    synonymInput.classList.add("border-red-500");
+                    return;
+                }
+
+                currentSynonyms.push(synonym);
+                renderSynonymTags();
+                synonymInput.value = "";
+            }
+
+            // ===== FONCTIONS POUR LES SUGGESTIONS IA =====
+            function renderAISuggestions() {
+                const container = document.getElementById(
+                    "aiSuggestionsContainer",
+                );
+                if (aiSuggestions.length === 0) {
+                    container.classList.add("hidden");
+                    return;
+                }
+
+                const availableSuggestions = aiSuggestions.filter(
+                    (synonym) => !currentSynonyms.includes(synonym),
+                );
+
+                const randomSuggestions = availableSuggestions
+                    .sort(() => 0.5 - Math.random())
+                    .slice(0, 5);
+
+                if (randomSuggestions.length === 0) {
+                    container.classList.add("hidden");
+                    return;
+                }
+
+                container.innerHTML = randomSuggestions
+                    .map(
+                        (synonym) => `
+            <button 
+                type="button" 
+                class="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-md text-sm hover:bg-blue-200 transition-colors ai-suggestion-btn"
+                data-synonym="${synonym.replace(/"/g, "&quot;")}"
+            >
+                ${synonym}
+                <span class="text-blue-600 text-xs">+</span>
+            </button>
+        `,
+                    )
+                    .join("");
+
+                container.classList.remove("hidden");
+
+                document
+                    .querySelectorAll(".ai-suggestion-btn")
+                    .forEach((btn) => {
+                        btn.addEventListener("click", function () {
+                            const synonym = this.getAttribute("data-synonym");
+                            addAISuggestion(synonym);
+                        });
+                    });
+            }
+
+            function addAISuggestion(synonym) {
+                const termInput = document.getElementById("termInput");
+                const term = termInput.value.trim();
+
+                if (synonym.toLowerCase() === term.toLowerCase()) {
+                    return;
+                }
+
+                if (!currentSynonyms.includes(synonym)) {
+                    currentSynonyms.push(synonym);
+                    renderSynonymTags();
+                    renderAISuggestions();
+                }
+            }
+
+            async function fetchAISuggestions() {
+                const termInput = document.getElementById("termInput");
+                const definitionInput =
+                    document.getElementById("definitionInput");
+                const synonymInput = document.getElementById("synonymInput");
+                const suggestBtn = document.getElementById("suggestBtn");
+                const aiSuggestionsContainer = document.getElementById(
+                    "aiSuggestionsContainer",
+                );
+
+                const term = termInput.value.trim();
+                const definition = definitionInput.value.trim();
+                const synonyms = [
+                    ...currentSynonyms,
+                    synonymInput.value.trim(),
+                ];
+
+                if (!term) {
+                    showErrorMessage("Please enter a word first.");
+                    termInput.focus();
+                    return;
+                }
+
+                const originalText = suggestBtn.textContent;
+                suggestBtn.textContent = "Searching...";
+                suggestBtn.disabled = true;
+                aiSuggestionsContainer.classList.add("hidden");
+
+                try {
+                    const response = await fetch("/api/suggest", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            term: term,
+                            definition: definition,
+                            synonyms: synonyms,
+                        }),
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(
+                            errorData.detail || "Erreur lors de la requête",
+                        );
+                    }
+
+                    const data = await response.json();
+
+                    if (data.synonyms && data.synonyms.length > 0) {
+                        aiSuggestions = data.synonyms;
+                        renderAISuggestions();
+                        showSuccessMessage(
+                            `${data.synonyms.length} suggestions found`,
+                        );
+                    } else {
+                        aiSuggestions = [];
+                        showInfoMessage("No synonyms found for this word");
+                    }
+                } catch (error) {
+                    console.error("Error:", error);
+                    showErrorMessage("Error: " + error.message);
+                    aiSuggestions = [];
+                } finally {
+                    suggestBtn.textContent = originalText;
+                    suggestBtn.disabled = false;
+                }
+            }
+
+            // ===== FONCTIONS D'IMPORT =====
             async function importGlossaryData(parsedData) {
                 if (!parsedData.data || !Array.isArray(parsedData.data)) {
                     throw new Error("Invalid file format");
                 }
 
-                // Clear existing terms or merge? Let's clear for now
                 terms = [];
                 nextId = 1;
 
-                // Import new terms
                 parsedData.data.forEach((row, index) => {
                     if (row.length >= 2) {
                         const term = row[0];
@@ -578,299 +861,165 @@ import "../styles/style.css";
                 saveTerms();
                 renderTable();
             }
-            // Load terms from localStorage or use defaults
-            let terms = JSON.parse(localStorage.getItem("glossaryTerms")) || [];
-            let nextId = Math.max(...terms.map((t) => t.id), 0) + 1;
-            let currentSynonyms = [];
 
-            // Save terms to localStorage
-            function saveTerms() {
-                localStorage.setItem("glossaryTerms", JSON.stringify(terms));
-            }
-
-            // Render table
-            function renderTable() {
-                const tbody = document.getElementById("glossaryTable");
-                tbody.innerHTML = terms
-                    .map(
-                        (term) => `
-                <tr class="hover:bg-gray-50 transition-colors">
-                    <td class="px-6 py-4 font-medium text-gray-900">${term.term}</td>
-                    <td class="px-6 py-4 text-gray-700">${term.definition}</td>
-                    <td class="px-6 py-4 text-gray-700">${Array.isArray(term.synonyms) ? term.synonyms.join(", ") : term.synonyms}</td>
-                </tr>
-            `,
-                    )
-                    .join("");
-            }
-
-            // Render synonym tags
-            function renderSynonymTags() {
-                const tagsContainer = document.getElementById("synonymTags");
-                tagsContainer.innerHTML = currentSynonyms
-                    .map(
-                        (syn, index) => `
-                <span class="inline-flex items-center gap-2 px-3 py-1 bg-gray-200 text-gray-800 rounded-md text-sm">
-                    ${syn}
-                    <button onclick="removeSynonym(${index})" class="text-gray-600 hover:text-gray-900 font-bold">×</button>
-                </span>
-            `,
-                    )
-                    .join("");
-            }
-
-            // Remove synonym
-            window.removeSynonym = function (index) {
-                currentSynonyms.splice(index, 1);
-                renderSynonymTags();
-            };
-
-            // Add synonym from input
-            function addSynonymFromInput() {
-                const synonymInput = document.getElementById("synonymInput");
-                const termInput = document.getElementById("termInput");
-                const synonymError = document.getElementById("synonymError");
-                const synonym = synonymInput.value.trim();
-                const term = termInput.value.trim();
-
-                // Clear previous error
-                synonymError.classList.add("hidden");
-                synonymInput.classList.remove("border-red-500");
-
-                if (!synonym) return;
-
-                // Check if synonym equals the term
-                if (synonym.toLowerCase() === term.toLowerCase()) {
-                    synonymError.textContent =
-                        "The synonym cannot be identical to the term!";
-                    synonymError.classList.remove("hidden");
-                    synonymInput.classList.add("border-red-500");
-                    return;
-                }
-
-                // Check if synonym already exists
-                if (currentSynonyms.includes(synonym)) {
-                    synonymError.textContent =
-                        "This synonym has already been added!";
-                    synonymError.classList.remove("hidden");
-                    synonymInput.classList.add("border-red-500");
-                    return;
-                }
-
-                currentSynonyms.push(synonym);
-                renderSynonymTags();
-                synonymInput.value = "";
-            }
-
-            // Clear all errors
-            function clearErrors() {
-                document.getElementById("termError").classList.add("hidden");
-                document
-                    .getElementById("definitionError")
-                    .classList.add("hidden");
-                document.getElementById("synonymError").classList.add("hidden");
-                document
-                    .getElementById("termInput")
-                    .classList.remove("border-red-500");
-                document
-                    .getElementById("definitionInput")
-                    .classList.remove("border-red-500");
-                document
-                    .getElementById("synonymInput")
-                    .classList.remove("border-red-500");
-            }
-
-            // Modal functions
-            const modal = document.getElementById("modal");
-            const addTermBtn = document.getElementById("addTermBtn");
-            const cancelBtn = document.getElementById("cancelBtn");
-            const submitBtn = document.getElementById("submitBtn");
-            const modalOverlay = document.getElementById("modalOverlay");
-            const suggestBtn = document.getElementById("suggestBtn");
-            const toast = document.getElementById("toast");
-            const synonymInput = document.getElementById("synonymInput");
-
-            function openModal() {
-                modal.classList.remove("hidden");
-                document.body.style.overflow = "hidden";
-            }
-
-            function closeModal() {
-                modal.classList.add("hidden");
-                document.body.style.overflow = "auto";
-                // Clear inputs and tags
-                document.getElementById("termInput").value = "";
-                document.getElementById("definitionInput").value = "";
-                document.getElementById("synonymInput").value = "";
-                currentSynonyms = [];
-                aiSuggestions = []; // Vider les suggestions IA
-                renderSynonymTags();
-                // Cacher le conteneur de suggestions IA
-                document
-                    .getElementById("aiSuggestionsContainer")
-                    .classList.add("hidden");
-                clearErrors();
-            }
-
-            let aiSuggestions = [];
-
-            // Fonction pour afficher les suggestions IA cliquables
-            function renderAISuggestions() {
-                const container = document.getElementById(
-                    "aiSuggestionsContainer",
+            // ===== FONCTIONS DE MESSAGES =====
+            function showSuccessMessage(message) {
+                showMessage(
+                    message,
+                    "bg-green-100 border-green-400 text-green-700",
                 );
-
-                if (aiSuggestions.length === 0) {
-                    container.classList.add("hidden");
-                    return;
-                }
-
-                // Filtrer les suggestions qui ne sont pas déjà dans les tags
-                const availableSuggestions = aiSuggestions.filter(
-                    (synonym) => !currentSynonyms.includes(synonym),
-                );
-
-                // Prendre 5 suggestions aléatoires maximum
-                const randomSuggestions = availableSuggestions
-                    .sort(() => 0.5 - Math.random())
-                    .slice(0, 5);
-
-                if (randomSuggestions.length === 0) {
-                    container.classList.add("hidden");
-                    return;
-                }
-
-                container.innerHTML = randomSuggestions
-                    .map(
-                        (synonym) => `
-                        <button 
-                            type="button" 
-                            class="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-md text-sm hover:bg-blue-200 transition-colors ai-suggestion-btn"
-                            data-synonym="${synonym.replace(/"/g, "&quot;")}"
-                        >
-                            ${synonym}
-                            <span class="text-blue-600 text-xs">+</span>
-                        </button>
-                    `,
-                    )
-                    .join("");
-
-                container.classList.remove("hidden");
-
-                // Ajouter les événements click aux boutons de suggestion
-                document
-                    .querySelectorAll(".ai-suggestion-btn")
-                    .forEach((btn) => {
-                        btn.addEventListener("click", function () {
-                            const synonym = this.getAttribute("data-synonym");
-                            addAISuggestion(synonym);
-                        });
-                    });
             }
 
-            // Fonction pour ajouter une suggestion IA aux tags
-            function addAISuggestion(synonym) {
-                const termInput = document.getElementById("termInput");
-                const term = termInput.value.trim();
-
-                // Vérifier que le synonyme n'est pas identique au terme
-                if (synonym.toLowerCase() === term.toLowerCase()) {
-                    return;
-                }
-
-                // Vérifier que le synonyme n'est pas déjà présent
-                if (!currentSynonyms.includes(synonym)) {
-                    currentSynonyms.push(synonym);
-                    renderSynonymTags();
-                    // Re-rendre les suggestions pour enlever celle qui a été ajoutée
-                    renderAISuggestions();
-                }
+            function showErrorMessage(message) {
+                showMessage(message, "bg-red-100 border-red-400 text-red-700");
             }
 
-            // Fonction pour récupérer les suggestions IA
-            async function fetchAISuggestions() {
-                const termInput = document.getElementById("termInput");
-                const definitionInput =
-                    document.getElementById("definitionInput");
-                const synonymInput = document.getElementById("synonymInput");
-                const suggestBtn = document.getElementById("suggestBtn");
-                const aiSuggestionsContainer = document.getElementById(
-                    "aiSuggestionsContainer",
+            function showInfoMessage(message) {
+                showMessage(
+                    message,
+                    "bg-blue-100 border-blue-400 text-blue-700",
                 );
+            }
 
-                const term = termInput.value.trim();
-                const definition = definitionInput.value.trim();
-                const synonyms = [
-                    ...currentSynonyms,
-                    synonymInput.value.trim(),
-                ];
+            function showMessage(message, styles) {
+                let toast = document.getElementById("aiToast");
+                if (!toast) {
+                    toast = document.createElement("div");
+                    toast.id = "aiToast";
+                    toast.className = `fixed top-4 right-4 border rounded-lg shadow-lg p-4 z-50 transition-opacity duration-300 ${styles}`;
+                    document.body.appendChild(toast);
+                }
 
-                if (!term) {
-                    showErrorMessage("Please enter a word first.");
-                    termInput.focus();
+                toast.innerHTML = `
+            <div class="flex items-center gap-3">
+                <div class="flex-1">
+                    <p class="font-medium">${message}</p>
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" class="text-gray-500 hover:text-gray-700">
+                    ×
+                </button>
+            </div>
+        `;
+
+                setTimeout(() => {
+                    if (toast.parentElement) {
+                        toast.remove();
+                    }
+                }, 5000);
+            }
+
+            // ===== ÉCOUTEURS D'ÉVÉNEMENTS =====
+
+            // Export events
+            exportBtn.addEventListener("click", openExportModal);
+            exportCancelBtn.addEventListener("click", closeExportModal);
+            exportModalOverlay.addEventListener("click", closeExportModal);
+            previewMarkdownBtn.addEventListener("click", () =>
+                updatePreview("markdown"),
+            );
+            previewJsonBtn.addEventListener("click", () =>
+                updatePreview("json"),
+            );
+
+            exportMarkdownBtn.addEventListener("click", async () => {
+                try {
+                    const { generateMarkdown } = await import(
+                        "../lib/export_documents.js"
+                    );
+                    const exportData = getExportData();
+                    generateMarkdown(
+                        exportData,
+                        ["Word", "Definition", "Synonyms"],
+                        "Glossary",
+                    );
+                    closeExportModal();
+                    showSuccessMessage("Glossary exported as Markdown!");
+                } catch (error) {
+                    console.error("Export error:", error);
+                    showErrorMessage(
+                        "Error exporting glossary: " + error.message,
+                    );
+                }
+            });
+
+            exportJsonBtn.addEventListener("click", async () => {
+                try {
+                    const { generateJSON } = await import(
+                        "../lib/export_documents.js"
+                    );
+                    const exportData = getExportData();
+                    generateJSON(
+                        exportData,
+                        ["Word", "Definition", "Synonyms"],
+                        "Glossary",
+                    );
+                    closeExportModal();
+                    showSuccessMessage("Glossary exported as JSON!");
+                } catch (error) {
+                    console.error("Export error:", error);
+                    showErrorMessage(
+                        "Error exporting glossary: " + error.message,
+                    );
+                }
+            });
+
+            // Import events
+            importBtn.addEventListener("click", openImportModal);
+            importCancelBtn.addEventListener("click", closeImportModal);
+            importModalOverlay.addEventListener("click", closeImportModal);
+            document
+                .querySelector("#importModal .border-dashed")
+                .addEventListener("click", () => {
+                    importFileInput.click();
+                });
+
+            importConfirmBtn.addEventListener("click", async () => {
+                const file = importFileInput.files[0];
+                if (!file) {
+                    importError.textContent = "Please select a file";
+                    importError.classList.remove("hidden");
                     return;
                 }
 
-                // Afficher un indicateur de chargement
-                const originalText = suggestBtn.textContent;
-                suggestBtn.textContent = "Searching...";
-                suggestBtn.disabled = true;
-
-                // Masquer les anciennes suggestions pendant le chargement
-                aiSuggestionsContainer.classList.add("hidden");
+                const fileExtension = file.name.split(".").pop().toLowerCase();
+                if (!["md", "json"].includes(fileExtension)) {
+                    importError.textContent =
+                        "Please select a .md or .json file";
+                    importError.classList.remove("hidden");
+                    return;
+                }
 
                 try {
-                    const response = await fetch("/api/suggest", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({
-                            term: term,
-                            definition: definition,
-                            synonyms: synonyms,
-                        }),
-                    });
-
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(
-                            errorData.detail || "Erreur lors de la requête",
+                    const fileContent = await readFileAsText(file);
+                    if (fileExtension === "md") {
+                        const { parseMarkdown } = await import(
+                            "../lib/export_documents.js"
                         );
-                    }
-
-                    const data = await response.json();
-
-                    if (data.synonyms && data.synonyms.length > 0) {
-                        // Stocker toutes les suggestions
-                        aiSuggestions = data.synonyms;
-                        // Afficher les suggestions cliquables
-                        renderAISuggestions();
-                        showSuccessMessage(
-                            `${data.synonyms.length} suggestions found`,
-                        );
+                        const parsedData = parseMarkdown(fileContent);
+                        await importGlossaryData(parsedData);
                     } else {
-                        aiSuggestions = [];
-                        showInfoMessage("No synonyms found for this word");
+                        const { parseJSON } = await import(
+                            "../lib/export_documents.js"
+                        );
+                        const parsedData = parseJSON(fileContent);
+                        await importGlossaryData(parsedData);
                     }
+                    closeImportModal();
+                    showSuccessMessage("Glossary imported successfully!");
                 } catch (error) {
-                    console.error("Error:", error);
-                    showErrorMessage("Error: " + error.message);
-                    aiSuggestions = [];
-                } finally {
-                    // Restaurer le bouton
-                    suggestBtn.textContent = originalText;
-                    suggestBtn.disabled = false;
+                    console.error("Import error:", error);
+                    importError.textContent =
+                        "Error importing file: " + error.message;
+                    importError.classList.remove("hidden");
                 }
-            }
+            });
 
-            // Event listeners
+            // Add term events
             addTermBtn.addEventListener("click", openModal);
             cancelBtn.addEventListener("click", closeModal);
             modalOverlay.addEventListener("click", closeModal);
             suggestBtn.addEventListener("click", fetchAISuggestions);
 
-            // Add synonym on Enter key
             synonymInput.addEventListener("keypress", (e) => {
                 if (e.key === "Enter") {
                     e.preventDefault();
@@ -878,13 +1027,11 @@ import "../styles/style.css";
                 }
             });
 
-            // Clear synonym error when typing
             synonymInput.addEventListener("input", () => {
                 document.getElementById("synonymError").classList.add("hidden");
                 synonymInput.classList.remove("border-red-500");
             });
 
-            // Clear errors when typing in required fields
             document
                 .getElementById("termInput")
                 .addEventListener("input", () => {
@@ -914,12 +1061,9 @@ import "../styles/style.css";
                 const term = termInput.value.trim();
                 const definition = definitionInput.value.trim();
 
-                // Clear previous errors
                 clearErrors();
-
                 let hasError = false;
 
-                // Validate term
                 if (!term) {
                     document
                         .getElementById("termError")
@@ -928,7 +1072,6 @@ import "../styles/style.css";
                     hasError = true;
                 }
 
-                // Validate definition
                 if (!definition) {
                     document
                         .getElementById("definitionError")
@@ -951,70 +1094,13 @@ import "../styles/style.css";
                 closeModal();
             });
 
-            // Close modal on Escape key
             document.addEventListener("keydown", (e) => {
                 if (e.key === "Escape" && !modal.classList.contains("hidden")) {
                     closeModal();
                 }
             });
 
-            // Fonctions pour afficher différents types de messages
-            function showSuccessMessage(message) {
-                showMessage(
-                    message,
-                    "bg-green-100 border-green-400 text-green-700",
-                );
-            }
-
-            function showErrorMessage(message) {
-                showMessage(message, "bg-red-100 border-red-400 text-red-700");
-            }
-
-            function showInfoMessage(message) {
-                showMessage(
-                    message,
-                    "bg-blue-100 border-blue-400 text-blue-700",
-                );
-            }
-
-            function showMessage(message, styles) {
-                // Créer ou réutiliser la toast
-                let toast = document.getElementById("aiToast");
-                if (!toast) {
-                    toast = document.createElement("div");
-                    toast.id = "aiToast";
-                    toast.className = `fixed top-4 right-4 border rounded-lg shadow-lg p-4 z-50 transition-opacity duration-300 ${styles}`;
-                    document.body.appendChild(toast);
-                }
-
-                toast.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <div class="flex-1">
-                            <p class="font-medium">${message}</p>
-                        </div>
-                        <button onclick="this.parentElement.parentElement.remove()" class="text-gray-500 hover:text-gray-700">
-                            ×
-                        </button>
-                    </div>
-                `;
-
-                // Auto-suppression après 5 secondes
-                setTimeout(() => {
-                    if (toast.parentElement) {
-                        toast.remove();
-                    }
-                }, 5000);
-            }
-
-            // Permettre d'appuyer sur Entrée dans le champ synonyme pour ajouter
-            synonymInput.addEventListener("keypress", (e) => {
-                if (e.key === "Enter") {
-                    e.preventDefault();
-                    addSynonymFromInput();
-                }
-            });
-
-            // Initial render
+            // ===== INITIALISATION =====
             renderTable();
         </script>
     </body>

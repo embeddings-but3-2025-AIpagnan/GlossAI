@@ -106,5 +106,38 @@ function parseJSON(jsonContent) {
   }
 }
 
+// Fonctions pour la prévisualisation (retournent le contenu sans télécharger)
+function generateMarkdownString(data, headers = ["Word", "Definition", "Synonyms"], title = "Glossary") {
+  if (!Array.isArray(data) || data.some(row => !Array.isArray(row) || row.length !== headers.length)) {
+    throw new Error(`Invalid data format`);
+  }
+
+  const titleLine = `# ${title}\n\n`;
+  const headerRow = `| ${headers.join(" | ")} |`;
+  const separatorRow = `| ${headers.map(() => "---").join(" | ")} |`;
+
+  const dataRows = data.map(row => {
+    const formattedRow = row.map(cell => {
+      if (Array.isArray(cell)) {
+        return cell.length > 0 ? cell.join(", ") : "-";
+      }
+      return String(cell || "-").replace(/\n/g, " ").replace(/\s+/g, " ").trim();
+    });
+    return `| ${formattedRow.join(" | ")} |`;
+  }).join("\n");
+
+  return titleLine + headerRow + "\n" + separatorRow + "\n" + dataRows;
+}
+
+function generateJSONString(data, headers = ["Word", "Definition", "Synonyms"], title = "Glossary") {
+  const structuredData = {
+    title: title,
+    headers: headers,
+    data: data
+  };
+
+  return JSON.stringify(structuredData, null, 2);
+}
+
 // Exportez les fonctions pour les rendre disponibles
-export { generateMarkdown, parseMarkdown, generateJSON, parseJSON };
+export { generateMarkdown, parseMarkdown, generateJSON, parseJSON, generateMarkdownString, generateJSONString };
