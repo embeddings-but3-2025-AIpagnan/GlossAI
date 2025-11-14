@@ -1,0 +1,161 @@
+@keyframes slideIn {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.modal-overlay {
+    animation: fadeIn 0.2s ease-out;
+}
+
+.modal-content {
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+.toast {
+    animation: slideIn 0.3s ease-out;
+}
+
+/* Styles pour la zone de dépôt de fichiers */
+.file-drop-zone {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.file-drop-zone:hover {
+    border-color: var(--color-primary);
+    background-color: var(--color-secondary);
+}
+
+.file-drop-zone.drag-over {
+    border-color: var(--color-primary);
+    background-color: var(--color-blue-100);
+    transform: scale(1.02);
+}
+
+/* Styles pour les boutons de format d'export */
+.format-button {
+    transition: all 0.2s ease;
+}
+
+.format-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Animation pour les messages toast personnalisés */
+.ai-toast {
+    animation: scaleIn 0.3s ease-out;
+}
+
+/* Styles pour l'état désactivé des boutons */
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+button:disabled:hover {
+    transform: none;
+}
+
+/* Styles pour les erreurs de validation */
+.input-error {
+    border-color: var(--color-red-400);
+    box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.1);
+}
+
+/* Styles responsifs pour les modales */
+@media (max-width: 640px) {
+    .modal-content {
+        margin: 1rem;
+        padding: 1.5rem;
+    }
+
+    .format-button {
+        flex-direction: column;
+        padding: 0.75rem;
+    }
+}
+
+/* Effet de focus accessible */
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* Styles pour les suggestions IA */
+.ai-suggestion-btn {
+    transition: all 0.2s ease;
+}
+
+.ai-suggestion-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+}
+
+/* Styles pour la prévisualisation */
+#exportPreview {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    line-height: 1.4;
+}
+
+/* Scrollbar personnalisée pour la prévisualisation */
+#exportPreview::-webkit-scrollbar {
+    width: 8px;
+}
+
+#exportPreview::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+#exportPreview::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+#exportPreview::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}

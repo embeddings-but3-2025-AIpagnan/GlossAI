@@ -1,4 +1,5 @@
 .venv
+.direnv
 node_modules
 __pycache__
-.direnv
+build/
