@@ -400,6 +400,8 @@ import "../styles/style.css";
             }
         }
 
+        const { invoke } = window.__TAURI__.core;
+
         // Fonction pour récupérer les suggestions IA
         async function fetchAISuggestions() {
             const termInput = document.getElementById("termInput");
@@ -409,8 +411,8 @@ import "../styles/style.css";
             const aiSuggestionsContainer = document.getElementById("aiSuggestionsContainer");
 
             const term = termInput.value.trim();
-            const definition = definitionInput.value.trim();
-            const synonyms = [...currentSynonyms, synonymInput.value.trim()];
+            const definition = definitionInput.value.trim() || null;
+            const synonyms = [...currentSynonyms, synonymInput.value.trim()].filter(s => s);
 
             if (!term) {
                 showErrorMessage("Veuillez d'abord saisir un terme métier");
@@ -427,42 +429,26 @@ import "../styles/style.css";
             aiSuggestionsContainer.classList.add("hidden");
 
             try {
-                const response = await fetch("/api/suggest", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        term: term,
-                        definition: definition,
-                        synonyms: synonyms
-                    }),
+                const result = await invoke("suggest_synonyms", {
+                    term,
+                    definition,
+                    synonyms,
+                    context: []
                 });
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.detail || "Erreur lors de la requête");
-                }
+                aiSuggestions = result;
 
-                const data = await response.json();
-
-                if (data.synonyms && data.synonyms.length > 0) {
-                    // Stocker toutes les suggestions
-                    aiSuggestions = data.synonyms;
-                    // Afficher les suggestions cliquables
+                if (aiSuggestions.length > 0) {
                     renderAISuggestions();
-                    showSuccessMessage(`${data.synonyms.length} suggestions trouvées`);
+                    showSuccessMessage(`${aiSuggestions.length} suggestions trouvées`);
                 } else {
-                    aiSuggestions = [];
                     showInfoMessage("Aucun synonyme trouvé pour ce terme");
                 }
-
             } catch (error) {
                 console.error("Erreur:", error);
-                showErrorMessage("Erreur: " + error.message);
+                showErrorMessage("Erreur: " + (error?.message || error?.toString() || "Échec de la suggestion"));
                 aiSuggestions = [];
             } finally {
-                // Restaurer le bouton
                 suggestBtn.textContent = originalText;
                 suggestBtn.disabled = false;
             }

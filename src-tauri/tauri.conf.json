@@ -8,6 +8,7 @@
     "devUrl": "http://127.0.0.1:32791"
   },
   "app": {
+    "withGlobalTauri": true,
     "windows": [
       {
         "title": "GlossAI",
@@ -37,7 +38,8 @@
     ],
     "resources": [],
     "externalBin": [
-      "../build/dist/backend"
+      "../build/dist/backend",
+      "../build/dist/ollama"
     ]
   }
 }
