@@ -1,10 +1,12 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::sync::{Arc, Mutex};
+use std::{
+    process::Command,
+    sync::{Arc, Mutex},
+};
 use tauri::Manager;
-use tauri_plugin_shell::process::CommandChild;
-use tauri_plugin_shell::ShellExt;
+use tauri_plugin_shell::{process::CommandChild, ShellExt};
 
 const BACKEND_PORT: u16 = 51823;
 const OLLAMA_PORT: u16 = 51824;
@@ -42,7 +44,6 @@ async fn start_services(app_handle: tauri::AppHandle) -> Result<(), String> {
 
 #[tauri::command]
 async fn suggest_synonyms(
-    state: tauri::State<'_, AppState>,
     term: String,
     definition: Option<String>,
     synonyms: Vec<String>,
@@ -117,7 +118,16 @@ fn main() {
                     let _ = child.kill();
                 }
                 if let Some(child) = state.backend_process.lock().unwrap().take() {
-                    let _ = child.kill();
+                    // On unix, child.kill() sends a SIGKILL, which is causing issues
+                    // with the backend, kill it softlya
+                    if cfg!(unix) {
+                        let _ = Command::new("kill")
+                            .arg("-SIGTERM")
+                            .arg(child.pid().to_string())
+                            .status();
+                    } else {
+                        let _ = child.kill();
+                    }
                 };
             }
         });
