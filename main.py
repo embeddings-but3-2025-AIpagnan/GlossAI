@@ -130,6 +130,33 @@ async def suggest_synonyms(request: SynonymRequest):
             status_code=500,
             detail=f"Erreur lors de la génération des suggestions: {e!s}",
         )
+    
+# Route pour la page glossary
+@app.get("/glossary")
+async def read_glossary():
+    # Essayer différents chemins possibles
+    possible_paths = [
+        Path("astro-frontend/dist/glossary.html"),  # Fichier direct
+        Path("astro-frontend/dist/glossary/index.html"),  # Dossier
+        Path("astro-frontend/dist/glossary"),  # Route Astro
+    ]
+    
+    for path in possible_paths:
+        if path.exists():
+            print(f"✅ Serving glossary from: {path}")
+            return FileResponse(str(path))
+    
+    # Lister les fichiers disponibles pour debug
+    dist_path = Path("astro-frontend/dist")
+    if dist_path.exists():
+        print("📁 Files in dist directory:")
+        for file_path in dist_path.rglob("*"):
+            print(f"   - {file_path.relative_to(dist_path)}")
+    
+    raise HTTPException(
+        status_code=500,
+        detail="Glossary page not found. Check Astro build output."
+    )
 
 
 if __name__ == "__main__":

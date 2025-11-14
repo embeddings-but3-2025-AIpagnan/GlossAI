@@ -1,5 +1,5 @@
 ---
-// src/pages/index.astro
+// src/pages/home.astro
 import "../styles/global.css";
 import "../styles/style.css";
 ---
@@ -9,7 +9,7 @@ import "../styles/style.css";
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>GlossAI - Glossary</title>
+        <title>GlossAI - Your Glossaries</title>
     </head>
 
     <body class="bg-gray-50">
@@ -22,23 +22,6 @@ import "../styles/style.css";
                         alt="GlossAI Logo"
                         width="200px"
                     />
-                    <h1 class="text-2xl font-semibold text-gray-900"></h1>
-                </div>
-                <div class="flex gap-3">
-                    <!-- Nouveau bouton Import -->
-                    <button
-                        id="importBtn"
-                        class="bg-primary hover-bg-primary text-white px-6 py-2 rounded-lg font-medium transition-colors"
-                    >
-                        Import
-                    </button>
-                    <!-- Bouton Export existant -->
-                    <button
-                        id="exportBtn"
-                        class="bg-primary hover-bg-primary text-white px-6 py-2 rounded-lg font-medium transition-colors"
-                    >
-                        Export
-                    </button>
                 </div>
             </div>
         </header>
@@ -48,83 +31,75 @@ import "../styles/style.css";
             <div class="max-w-7xl mx-auto">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-3xl font-semibold text-gray-900">
-                        Glossary
+                        Your glossaries
                     </h2>
-                    <button
-                        id="addTermBtn"
-                        class="bg-primary hover-bg-primary text-white px-6 py-2.5 rounded-lg font-medium transition-colors"
-                    >
-                        + New word
-                    </button>
+                    <div class="flex gap-3">
+                        <button
+                            id="importGlossaryBtn"
+                            class="bg-primary hover-bg-primary text-white px-6 py-2.5 rounded-lg font-medium transition-colors"
+                        >
+                            Import glossary
+                        </button>
+                        <button
+                            id="newGlossaryBtn"
+                            class="bg-primary hover-bg-primary text-white px-6 py-2.5 rounded-lg font-medium transition-colors"
+                        >
+                            New glossary
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Table -->
-                <div
-                    class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
-                >
-                    <table class="w-full">
-                        <thead class="bg-gray-50 border-b border-gray-200">
-                            <tr>
-                                <th
-                                    class="px-6 py-4 text-left text-sm font-semibold text-gray-900"
-                                    >Word</th
-                                >
-                                <th
-                                    class="px-6 py-4 text-left text-sm font-semibold text-gray-900"
-                                    >Definition</th
-                                >
-                                <th
-                                    class="px-6 py-4 text-left text-sm font-semibold text-gray-900"
-                                    >Synonyms</th
-                                >
-                            </tr>
-                        </thead>
-                        <tbody
-                            id="glossaryTable"
-                            class="divide-y divide-gray-200"
-                        >
-                        </tbody>
-                    </table>
+                <!-- Glossaries List -->
+                <div id="glossariesContainer" class="space-y-4">
+                    <!-- Glossaries will be inserted here -->
+                </div>
+
+                <!-- Empty state -->
+                <div id="emptyState" class="hidden text-center py-20">
+                    <p class="text-gray-500 text-lg">No glossaries yet</p>
+                    <p class="text-gray-400 mt-2">
+                        Create your first glossary to get started
+                    </p>
                 </div>
             </div>
         </main>
 
-        <!-- Modal -->
-        <div id="modal" class="hidden fixed inset-0 z-50">
+        <!-- Modal New Glossary -->
+        <div id="newGlossaryModal" class="hidden fixed inset-0 z-50">
             <div
                 class="modal-overlay absolute inset-0 bg-opacity-30 backdrop-blur-sm"
-                id="modalOverlay"
+                id="newGlossaryModalOverlay"
             >
             </div>
             <div class="flex items-center justify-center min-h-screen p-4">
                 <div
-                    class="modal-content bg-white rounded-3xl shadow-2xl max-w-4xl w-full p-10 relative"
+                    class="modal-content bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-10 relative"
                 >
                     <h3 class="text-2xl font-semibold text-gray-900 mb-8">
-                        Addition of a new word
+                        Add a new glossary
                     </h3>
 
                     <div
                         class="bg-gray-50 rounded-2xl p-8 space-y-6 border border-gray-100"
                     >
                         <h4 class="text-lg font-semibold text-gray-900 mb-4">
-                            Word details
+                            Details of the glossary
                         </h4>
 
                         <div>
                             <label
                                 class="block text-sm font-medium text-gray-900 mb-2"
                             >
-                                Word <span class="text-red-600">*</span>
+                                Name <span class="text-red-600">*</span>
                             </label>
                             <input
                                 type="text"
-                                id="termInput"
-                                placeholder="Enter the word"
+                                id="glossaryNameInput"
+                                placeholder="Enter the name of the glossary"
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all bg-white"
                             />
                             <p
-                                id="termError"
+                                id="glossaryNameError"
                                 class="text-red-600 text-sm mt-1 hidden"
                             >
                                 This field is required!
@@ -135,74 +110,32 @@ import "../styles/style.css";
                             <label
                                 class="block text-sm font-medium text-gray-900 mb-2"
                             >
-                                Definition <span class="text-red-600">*</span>
+                                Description <span class="text-red-600">*</span>
                             </label>
                             <textarea
-                                id="definitionInput"
-                                placeholder="Enter the definition of the word"
+                                id="glossaryDescriptionInput"
+                                placeholder="Enter the description of the glossary"
                                 rows="4"
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all resize-none bg-white"
                             ></textarea>
                             <p
-                                id="definitionError"
+                                id="glossaryDescriptionError"
                                 class="text-red-600 text-sm mt-1 hidden"
                             >
                                 This field is required!
                             </p>
-                        </div>
-
-                        <div>
-                            <label
-                                class="block text-sm font-medium text-gray-900 mb-2"
-                            >
-                                Synonym
-                            </label>
-                            <div class="flex items-center gap-2 flex-wrap">
-                                <input
-                                    type="text"
-                                    id="synonymInput"
-                                    placeholder="Enter synonyms for the word"
-                                    class="w-48 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all bg-white text-sm"
-                                />
-                                <!-- Tags container inline -->
-                                <div
-                                    id="synonymTags"
-                                    class="flex flex-wrap gap-2"
-                                >
-                                </div>
-                            </div>
-                            <p
-                                id="synonymError"
-                                class="text-red-600 text-sm mt-1 hidden"
-                            >
-                            </p>
-
-                            <button
-                                id="suggestBtn"
-                                class="mt-3 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors bg-white"
-                            >
-                                AI Suggestions
-                            </button>
-
-                            <!-- Conteneur pour les suggestions IA -->
-                            <div
-                                id="aiSuggestionsContainer"
-                                class="mt-2 flex flex-wrap gap-2 hidden"
-                            >
-                                <!-- Les suggestions IA seront insérées ici -->
-                            </div>
                         </div>
                     </div>
 
                     <div class="flex justify-end gap-3 mt-8">
                         <button
-                            id="cancelBtn"
+                            id="cancelNewGlossaryBtn"
                             class="px-8 py-3 border border-gray-300 rounded-lg font-medium text-gray-900 hover:bg-gray-50 transition-colors"
                         >
                             Cancel
                         </button>
                         <button
-                            id="submitBtn"
+                            id="submitNewGlossaryBtn"
                             class="px-8 py-3 bg-primary hover-bg-primary text-white rounded-lg font-medium transition-colors"
                         >
                             Add
@@ -212,84 +145,7 @@ import "../styles/style.css";
             </div>
         </div>
 
-        <!-- Modal Export -->
-        <div id="exportModal" class="hidden fixed inset-0 z-50">
-            <div
-                class="modal-overlay absolute inset-0 bg-opacity-30 backdrop-blur-sm"
-                id="exportModalOverlay"
-            >
-            </div>
-            <div class="flex items-center justify-center min-h-screen p-4">
-                <div
-                    class="modal-content bg-gray-100 rounded-3xl shadow-2xl max-w-5xl w-full p-10 relative"
-                >
-                    <h3 class="text-4xl font-bold text-gray-900 mb-8">
-                        Export
-                    </h3>
-
-                    <div class="bg-white rounded-2xl p-8 shadow-sm">
-                        <!-- Preview section header with tabs -->
-                        <div class="flex justify-between items-center mb-6">
-                            <h4 class="text-xl font-semibold text-gray-900">
-                                Preview of the file
-                            </h4>
-                            <div class="flex gap-2 bg-gray-200 p-1 rounded-lg">
-                                <button
-                                    id="previewMarkdownBtn"
-                                    class="px-6 py-2 rounded-md font-medium transition-colors bg-white text-gray-900 shadow-sm"
-                                >
-                                    Markdown
-                                </button>
-                                <button
-                                    id="previewJsonBtn"
-                                    class="px-6 py-2 rounded-md font-medium transition-colors text-gray-600 hover:text-gray-900"
-                                >
-                                    json
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Preview content -->
-                        <div
-                            id="exportPreview"
-                            class="bg-gray-50 border border-gray-200 rounded-xl p-6 min-h-[400px] max-h-[400px] overflow-auto font-mono text-sm whitespace-pre-wrap text-gray-700"
-                        >
-                            <!-- Preview content will appear here -->
-                            <p class="text-gray-400 text-center py-20">
-                                Select a format to preview
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Export buttons -->
-                    <div class="flex gap-4 mt-8 justify-center">
-                        <button
-                            id="exportMarkdownBtn"
-                            class="bg-primary hover-bg-primary text-white px-10 py-4 rounded-xl font-semibold transition-colors text-lg shadow-lg"
-                        >
-                            Download Markdown
-                        </button>
-                        <button
-                            id="exportJsonBtn"
-                            class="bg-primary hover-bg-primary text-white px-10 py-4 rounded-xl font-semibold transition-colors text-lg shadow-lg"
-                        >
-                            Download JSON
-                        </button>
-                    </div>
-
-                    <div class="flex justify-center mt-6">
-                        <button
-                            id="exportCancelBtn"
-                            class="px-8 py-3 border border-gray-300 rounded-xl font-medium text-gray-900 hover:bg-gray-50 transition-colors"
-                        >
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal Import -->
+        <!-- Modal Import Glossary (réutilisé depuis index.astro) -->
         <div id="importModal" class="hidden fixed inset-0 z-50">
             <div
                 class="modal-overlay absolute inset-0 bg-opacity-30 backdrop-blur-sm"
@@ -308,12 +164,13 @@ import "../styles/style.css";
                         <p class="text-gray-600">Choose file to import:</p>
 
                         <div
-                            class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center"
+                            class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-gray-400 transition-colors"
+                            id="importDropZone"
                         >
                             <input
                                 type="file"
                                 id="importFileInput"
-                                accept=".md,.json,.txt"
+                                accept=".md,.json"
                                 class="hidden"
                             />
                             <div class="flex flex-col items-center gap-3">
@@ -364,228 +221,152 @@ import "../styles/style.css";
             </div>
         </div>
 
-        <!-- Toast Notification -->
-        <div
-            id="toast"
-            class="hidden fixed top-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-50 toast"
-        >
-            <div class="flex items-center gap-3">
-                <div
-                    class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center"
-                >
-                    <svg
-                        class="w-6 h-6 text-blue-600"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        ></path>
-                    </svg>
-                </div>
-                <div>
-                    <p class="font-medium text-gray-900">AI Suggestions</p>
-                    <p class="text-sm text-gray-600">
-                        Feature under development
-                    </p>
-                </div>
-            </div>
-        </div>
-
         <script>
             // ===== VARIABLES GLOBALES =====
-            let terms = JSON.parse(localStorage.getItem("glossaryTerms")) || [];
-            let nextId = Math.max(...terms.map((t) => t.id), 0) + 1;
-            let currentSynonyms = [];
-            let currentPreviewFormat = null;
-            let aiSuggestions = [];
+            let glossaries =
+                JSON.parse(localStorage.getItem("glossaries")) || [];
+            let nextGlossaryId =
+                Math.max(...glossaries.map((g) => g.id), 0) + 1;
 
-            // ===== ÉLÉMENTS DU DOM =====
-            // Modal Export elements
-            const exportModal = document.getElementById("exportModal");
-            const exportBtn = document.getElementById("exportBtn");
-            const exportCancelBtn = document.getElementById("exportCancelBtn");
-            const exportModalOverlay =
-                document.getElementById("exportModalOverlay");
-            const exportMarkdownBtn =
-                document.getElementById("exportMarkdownBtn");
-            const exportJsonBtn = document.getElementById("exportJsonBtn");
-            const previewMarkdownBtn =
-                document.getElementById("previewMarkdownBtn");
-            const previewJsonBtn = document.getElementById("previewJsonBtn");
-            const exportPreview = document.getElementById("exportPreview");
+            // ===== FONCTIONS DE BASE =====
+            function saveGlossaries() {
+                localStorage.setItem("glossaries", JSON.stringify(glossaries));
+            }
 
-            // Modal Import elements
+            function renderGlossaries() {
+                const container = document.getElementById(
+                    "glossariesContainer",
+                );
+                const emptyState = document.getElementById("emptyState");
+
+                if (glossaries.length === 0) {
+                    container.innerHTML = "";
+                    emptyState.classList.remove("hidden");
+                    return;
+                }
+
+                emptyState.classList.add("hidden");
+                container.innerHTML = glossaries
+                    .map(
+                        (glossary) => `
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <h3 class="text-xl font-semibold text-gray-900 mb-2">
+                                    ${glossary.name}
+                                </h3>
+                                <p class="text-gray-600 text-sm">
+                                    ${glossary.description}
+                                </p>
+                            </div>
+                            <div class="flex gap-2 ml-4">
+                                <button
+                                    onclick="viewGlossary(${glossary.id})"
+                                    class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                                    title="View"
+                                >
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    </svg>
+                                </button>
+                                <button
+                                    onclick="editGlossary(${glossary.id})"
+                                    class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                                    title="Edit"
+                                >
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                </button>
+                                <button
+                                    onclick="deleteGlossary(${glossary.id})"
+                                    class="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                    title="Delete"
+                                >
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `,
+                    )
+                    .join("");
+            }
+
+            // ===== FONCTIONS POUR LES GLOSSAIRES =====
+            window.viewGlossary = function (id) {
+                // Redirection vers la page du glossaire
+                window.location.href = `/glossary?id=${id}`;
+            };
+
+            window.editGlossary = function (id) {
+                // TODO: Implémenter l'édition
+                console.log("Edit glossary", id);
+            };
+
+            window.deleteGlossary = function (id) {
+                if (confirm("Are you sure you want to delete this glossary?")) {
+                    glossaries = glossaries.filter((g) => g.id !== id);
+                    saveGlossaries();
+                    renderGlossaries();
+                }
+            };
+
+            // ===== GESTION DES MODALES =====
+            const newGlossaryModal =
+                document.getElementById("newGlossaryModal");
+            const newGlossaryBtn = document.getElementById("newGlossaryBtn");
+            const cancelNewGlossaryBtn = document.getElementById(
+                "cancelNewGlossaryBtn",
+            );
+            const submitNewGlossaryBtn = document.getElementById(
+                "submitNewGlossaryBtn",
+            );
+            const newGlossaryModalOverlay = document.getElementById(
+                "newGlossaryModalOverlay",
+            );
+
             const importModal = document.getElementById("importModal");
-            const importBtn = document.getElementById("importBtn");
+            const importGlossaryBtn =
+                document.getElementById("importGlossaryBtn");
             const importCancelBtn = document.getElementById("importCancelBtn");
             const importModalOverlay =
                 document.getElementById("importModalOverlay");
+            const importDropZone = document.getElementById("importDropZone");
             const importFileInput = document.getElementById("importFileInput");
             const importConfirmBtn =
                 document.getElementById("importConfirmBtn");
             const importError = document.getElementById("importError");
 
-            // Modal Add Term elements
-            const modal = document.getElementById("modal");
-            const addTermBtn = document.getElementById("addTermBtn");
-            const cancelBtn = document.getElementById("cancelBtn");
-            const submitBtn = document.getElementById("submitBtn");
-            const modalOverlay = document.getElementById("modalOverlay");
-            const suggestBtn = document.getElementById("suggestBtn");
-            const toast = document.getElementById("toast");
-            const synonymInput = document.getElementById("synonymInput");
-
-            // ===== FONCTIONS DE BASE =====
-            function saveTerms() {
-                localStorage.setItem("glossaryTerms", JSON.stringify(terms));
-            }
-
-            function renderTable() {
-                const tbody = document.getElementById("glossaryTable");
-                tbody.innerHTML = terms
-                    .map(
-                        (term) => `
-            <tr class="hover:bg-gray-50 transition-colors">
-                <td class="px-6 py-4 font-medium text-gray-900">${term.term}</td>
-                <td class="px-6 py-4 text-gray-700">${term.definition}</td>
-                <td class="px-6 py-4 text-gray-700">${Array.isArray(term.synonyms) ? term.synonyms.join(", ") : term.synonyms}</td>
-            </tr>
-        `,
-                    )
-                    .join("");
-            }
-
-            function renderSynonymTags() {
-                const tagsContainer = document.getElementById("synonymTags");
-                tagsContainer.innerHTML = currentSynonyms
-                    .map(
-                        (syn, index) => `
-            <span class="inline-flex items-center gap-2 px-3 py-1 bg-gray-200 text-gray-800 rounded-md text-sm">
-                ${syn}
-                <button onclick="removeSynonym(${index})" class="text-gray-600 hover:text-gray-900 font-bold">×</button>
-            </span>
-        `,
-                    )
-                    .join("");
-            }
-
-            // ===== FONCTIONS D'EXPORT =====
-            function getExportData() {
-                return terms.map((term) => [
-                    term.term,
-                    term.definition,
-                    Array.isArray(term.synonyms) ? term.synonyms : [],
-                ]);
-            }
-
-            async function updatePreview(format) {
-                try {
-                    const { generateMarkdownString, generateJSONString } =
-                        await import("../lib/export_documents.js");
-                    const exportData = getExportData();
-                    let previewContent = "";
-
-                    if (format === "markdown") {
-                        previewContent = generateMarkdownString(
-                            exportData,
-                            ["Word", "Definition", "Synonyms"],
-                            "Glossary",
-                        );
-                    } else if (format === "json") {
-                        previewContent = generateJSONString(
-                            exportData,
-                            ["Word", "Definition", "Synonyms"],
-                            "Glossary",
-                        );
-                    }
-
-                    exportPreview.textContent = previewContent;
-                    currentPreviewFormat = format;
-
-                    // Mettre à jour les styles des boutons de prévisualisation
-                    if (format === "markdown") {
-                        previewMarkdownBtn.classList.remove(
-                            "text-gray-600",
-                            "hover:text-gray-900",
-                        );
-                        previewMarkdownBtn.classList.add(
-                            "bg-white",
-                            "text-gray-900",
-                            "shadow-sm",
-                        );
-                        previewJsonBtn.classList.remove(
-                            "bg-white",
-                            "text-gray-900",
-                            "shadow-sm",
-                        );
-                        previewJsonBtn.classList.add(
-                            "text-gray-600",
-                            "hover:text-gray-900",
-                        );
-                    } else {
-                        previewJsonBtn.classList.remove(
-                            "text-gray-600",
-                            "hover:text-gray-900",
-                        );
-                        previewJsonBtn.classList.add(
-                            "bg-white",
-                            "text-gray-900",
-                            "shadow-sm",
-                        );
-                        previewMarkdownBtn.classList.remove(
-                            "bg-white",
-                            "text-gray-900",
-                            "shadow-sm",
-                        );
-                        previewMarkdownBtn.classList.add(
-                            "text-gray-600",
-                            "hover:text-gray-900",
-                        );
-                    }
-                } catch (error) {
-                    console.error("Preview error:", error);
-                    exportPreview.textContent =
-                        "Error generating preview: " + error.message;
-                }
-            }
-
-            // ===== FONCTIONS DE MODALES =====
-            function openExportModal() {
-                exportModal.classList.remove("hidden");
+            function openNewGlossaryModal() {
+                newGlossaryModal.classList.remove("hidden");
                 document.body.style.overflow = "hidden";
-                exportPreview.innerHTML =
-                    '<p class="text-gray-400 text-center py-20">Select a format to preview</p>';
-                currentPreviewFormat = null;
-
-                // Reset preview button styles
-                previewMarkdownBtn.classList.remove(
-                    "text-gray-600",
-                    "hover:text-gray-900",
-                );
-                previewMarkdownBtn.classList.add(
-                    "bg-white",
-                    "text-gray-900",
-                    "shadow-sm",
-                );
-                previewJsonBtn.classList.remove(
-                    "bg-white",
-                    "text-gray-900",
-                    "shadow-sm",
-                );
-                previewJsonBtn.classList.add(
-                    "text-gray-600",
-                    "hover:text-gray-900",
-                );
             }
 
-            function closeExportModal() {
-                exportModal.classList.add("hidden");
+            function closeNewGlossaryModal() {
+                newGlossaryModal.classList.add("hidden");
                 document.body.style.overflow = "auto";
+                document.getElementById("glossaryNameInput").value = "";
+                document.getElementById("glossaryDescriptionInput").value = "";
+                clearNewGlossaryErrors();
+            }
+
+            function clearNewGlossaryErrors() {
+                document
+                    .getElementById("glossaryNameError")
+                    .classList.add("hidden");
+                document
+                    .getElementById("glossaryDescriptionError")
+                    .classList.add("hidden");
+                document
+                    .getElementById("glossaryNameInput")
+                    .classList.remove("border-red-500");
+                document
+                    .getElementById("glossaryDescriptionInput")
+                    .classList.remove("border-red-500");
             }
 
             function openImportModal() {
@@ -601,378 +382,95 @@ import "../styles/style.css";
                 importError.classList.add("hidden");
             }
 
-            function openModal() {
-                modal.classList.remove("hidden");
-                document.body.style.overflow = "hidden";
-            }
-
-            function closeModal() {
-                modal.classList.add("hidden");
-                document.body.style.overflow = "auto";
-                document.getElementById("termInput").value = "";
-                document.getElementById("definitionInput").value = "";
-                document.getElementById("synonymInput").value = "";
-                currentSynonyms = [];
-                aiSuggestions = [];
-                renderSynonymTags();
-                document
-                    .getElementById("aiSuggestionsContainer")
-                    .classList.add("hidden");
-                clearErrors();
-            }
-
-            // ===== FONCTIONS UTILITAIRES =====
-            function clearErrors() {
-                document.getElementById("termError").classList.add("hidden");
-                document
-                    .getElementById("definitionError")
-                    .classList.add("hidden");
-                document.getElementById("synonymError").classList.add("hidden");
-                document
-                    .getElementById("termInput")
-                    .classList.remove("border-red-500");
-                document
-                    .getElementById("definitionInput")
-                    .classList.remove("border-red-500");
-                document
-                    .getElementById("synonymInput")
-                    .classList.remove("border-red-500");
-            }
-
-            function readFileAsText(file) {
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = (e) => resolve(e.target.result);
-                    reader.onerror = (e) =>
-                        reject(new Error("Failed to read file"));
-                    reader.readAsText(file);
-                });
-            }
-
-            // ===== FONCTIONS POUR LES SYNONYMES =====
-            window.removeSynonym = function (index) {
-                currentSynonyms.splice(index, 1);
-                renderSynonymTags();
-            };
-
-            function addSynonymFromInput() {
-                const synonymInput = document.getElementById("synonymInput");
-                const termInput = document.getElementById("termInput");
-                const synonymError = document.getElementById("synonymError");
-                const synonym = synonymInput.value.trim();
-                const term = termInput.value.trim();
-
-                synonymError.classList.add("hidden");
-                synonymInput.classList.remove("border-red-500");
-
-                if (!synonym) return;
-
-                if (synonym.toLowerCase() === term.toLowerCase()) {
-                    synonymError.textContent =
-                        "The synonym cannot be identical to the term!";
-                    synonymError.classList.remove("hidden");
-                    synonymInput.classList.add("border-red-500");
-                    return;
-                }
-
-                if (currentSynonyms.includes(synonym)) {
-                    synonymError.textContent =
-                        "This synonym has already been added!";
-                    synonymError.classList.remove("hidden");
-                    synonymInput.classList.add("border-red-500");
-                    return;
-                }
-
-                currentSynonyms.push(synonym);
-                renderSynonymTags();
-                synonymInput.value = "";
-            }
-
-            // ===== FONCTIONS POUR LES SUGGESTIONS IA =====
-            function renderAISuggestions() {
-                const container = document.getElementById(
-                    "aiSuggestionsContainer",
-                );
-                if (aiSuggestions.length === 0) {
-                    container.classList.add("hidden");
-                    return;
-                }
-
-                const availableSuggestions = aiSuggestions.filter(
-                    (synonym) => !currentSynonyms.includes(synonym),
-                );
-
-                const randomSuggestions = availableSuggestions
-                    .sort(() => 0.5 - Math.random())
-                    .slice(0, 5);
-
-                if (randomSuggestions.length === 0) {
-                    container.classList.add("hidden");
-                    return;
-                }
-
-                container.innerHTML = randomSuggestions
-                    .map(
-                        (synonym) => `
-            <button 
-                type="button" 
-                class="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-md text-sm hover:bg-blue-200 transition-colors ai-suggestion-btn"
-                data-synonym="${synonym.replace(/"/g, "&quot;")}"
-            >
-                ${synonym}
-                <span class="text-blue-600 text-xs">+</span>
-            </button>
-        `,
-                    )
-                    .join("");
-
-                container.classList.remove("hidden");
-
-                document
-                    .querySelectorAll(".ai-suggestion-btn")
-                    .forEach((btn) => {
-                        btn.addEventListener("click", function () {
-                            const synonym = this.getAttribute("data-synonym");
-                            addAISuggestion(synonym);
-                        });
-                    });
-            }
-
-            function addAISuggestion(synonym) {
-                const termInput = document.getElementById("termInput");
-                const term = termInput.value.trim();
-
-                if (synonym.toLowerCase() === term.toLowerCase()) {
-                    return;
-                }
-
-                if (!currentSynonyms.includes(synonym)) {
-                    currentSynonyms.push(synonym);
-                    renderSynonymTags();
-                    renderAISuggestions();
-                }
-            }
-
-            async function fetchAISuggestions() {
-                const termInput = document.getElementById("termInput");
-                const definitionInput =
-                    document.getElementById("definitionInput");
-                const synonymInput = document.getElementById("synonymInput");
-                const suggestBtn = document.getElementById("suggestBtn");
-                const aiSuggestionsContainer = document.getElementById(
-                    "aiSuggestionsContainer",
-                );
-
-                const term = termInput.value.trim();
-                const definition = definitionInput.value.trim();
-                const synonyms = [
-                    ...currentSynonyms,
-                    synonymInput.value.trim(),
-                ];
-
-                if (!term) {
-                    showErrorMessage("Please enter a word first.");
-                    termInput.focus();
-                    return;
-                }
-
-                const originalText = suggestBtn.textContent;
-                suggestBtn.textContent = "Searching...";
-                suggestBtn.disabled = true;
-                aiSuggestionsContainer.classList.add("hidden");
-
-                try {
-                    const response = await fetch("/api/suggest", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({
-                            term: term,
-                            definition: definition,
-                            synonyms: synonyms,
-                        }),
-                    });
-
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(
-                            errorData.detail || "Erreur lors de la requête",
-                        );
-                    }
-
-                    const data = await response.json();
-
-                    if (data.synonyms && data.synonyms.length > 0) {
-                        aiSuggestions = data.synonyms;
-                        renderAISuggestions();
-                        showSuccessMessage(
-                            `${data.synonyms.length} suggestions found`,
-                        );
-                    } else {
-                        aiSuggestions = [];
-                        showInfoMessage("No synonyms found for this word");
-                    }
-                } catch (error) {
-                    console.error("Error:", error);
-                    showErrorMessage("Error: " + error.message);
-                    aiSuggestions = [];
-                } finally {
-                    suggestBtn.textContent = originalText;
-                    suggestBtn.disabled = false;
-                }
-            }
-
-            // ===== FONCTIONS D'IMPORT =====
-            async function importGlossaryData(parsedData) {
-                if (!parsedData.data || !Array.isArray(parsedData.data)) {
-                    throw new Error("Invalid file format");
-                }
-
-                terms = [];
-                nextId = 1;
-
-                parsedData.data.forEach((row, index) => {
-                    if (row.length >= 2) {
-                        const term = row[0];
-                        const definition = row[1];
-                        let synonyms = [];
-
-                        if (row.length >= 3) {
-                            synonyms = Array.isArray(row[2])
-                                ? row[2]
-                                : typeof row[2] === "string"
-                                  ? row[2]
-                                        .split(",")
-                                        .map((s) => s.trim())
-                                        .filter((s) => s)
-                                  : [];
-                        }
-
-                        terms.push({
-                            id: nextId++,
-                            term,
-                            definition,
-                            synonyms,
-                        });
-                    }
-                });
-
-                saveTerms();
-                renderTable();
-            }
-
-            // ===== FONCTIONS DE MESSAGES =====
-            function showSuccessMessage(message) {
-                showMessage(
-                    message,
-                    "bg-green-100 border-green-400 text-green-700",
-                );
-            }
-
-            function showErrorMessage(message) {
-                showMessage(message, "bg-red-100 border-red-400 text-red-700");
-            }
-
-            function showInfoMessage(message) {
-                showMessage(
-                    message,
-                    "bg-blue-100 border-blue-400 text-blue-700",
-                );
-            }
-
-            function showMessage(message, styles) {
-                let toast = document.getElementById("aiToast");
-                if (!toast) {
-                    toast = document.createElement("div");
-                    toast.id = "aiToast";
-                    toast.className = `fixed top-4 right-4 border rounded-lg shadow-lg p-4 z-50 transition-opacity duration-300 ${styles}`;
-                    document.body.appendChild(toast);
-                }
-
-                toast.innerHTML = `
-            <div class="flex items-center gap-3">
-                <div class="flex-1">
-                    <p class="font-medium">${message}</p>
-                </div>
-                <button onclick="this.parentElement.parentElement.remove()" class="text-gray-500 hover:text-gray-700">
-                    ×
-                </button>
-            </div>
-        `;
-
-                setTimeout(() => {
-                    if (toast.parentElement) {
-                        toast.remove();
-                    }
-                }, 5000);
-            }
-
-            // ===== ÉCOUTEURS D'ÉVÉNEMENTS =====
-
-            // Export events
-            exportBtn.addEventListener("click", openExportModal);
-            exportCancelBtn.addEventListener("click", closeExportModal);
-            exportModalOverlay.addEventListener("click", closeExportModal);
-            previewMarkdownBtn.addEventListener("click", () =>
-                updatePreview("markdown"),
+            // ===== ÉVÉNEMENTS =====
+            newGlossaryBtn.addEventListener("click", openNewGlossaryModal);
+            cancelNewGlossaryBtn.addEventListener(
+                "click",
+                closeNewGlossaryModal,
             );
-            previewJsonBtn.addEventListener("click", () =>
-                updatePreview("json"),
+            newGlossaryModalOverlay.addEventListener(
+                "click",
+                closeNewGlossaryModal,
             );
 
-            exportMarkdownBtn.addEventListener("click", async () => {
-                try {
-                    const { generateMarkdown } = await import(
-                        "../lib/export_documents.js"
-                    );
-                    const exportData = getExportData();
-                    generateMarkdown(
-                        exportData,
-                        ["Word", "Definition", "Synonyms"],
-                        "Glossary",
-                    );
-                    closeExportModal();
-                    showSuccessMessage("Glossary exported as Markdown!");
-                } catch (error) {
-                    console.error("Export error:", error);
-                    showErrorMessage(
-                        "Error exporting glossary: " + error.message,
-                    );
-                }
-            });
-
-            exportJsonBtn.addEventListener("click", async () => {
-                try {
-                    const { generateJSON } = await import(
-                        "../lib/export_documents.js"
-                    );
-                    const exportData = getExportData();
-                    generateJSON(
-                        exportData,
-                        ["Word", "Definition", "Synonyms"],
-                        "Glossary",
-                    );
-                    closeExportModal();
-                    showSuccessMessage("Glossary exported as JSON!");
-                } catch (error) {
-                    console.error("Export error:", error);
-                    showErrorMessage(
-                        "Error exporting glossary: " + error.message,
-                    );
-                }
-            });
-
-            // Import events
-            importBtn.addEventListener("click", openImportModal);
+            importGlossaryBtn.addEventListener("click", openImportModal);
             importCancelBtn.addEventListener("click", closeImportModal);
             importModalOverlay.addEventListener("click", closeImportModal);
+            importDropZone.addEventListener("click", () =>
+                importFileInput.click(),
+            );
+
+            // Clear errors on input
             document
-                .querySelector("#importModal .border-dashed")
-                .addEventListener("click", () => {
-                    importFileInput.click();
+                .getElementById("glossaryNameInput")
+                .addEventListener("input", () => {
+                    document
+                        .getElementById("glossaryNameError")
+                        .classList.add("hidden");
+                    document
+                        .getElementById("glossaryNameInput")
+                        .classList.remove("border-red-500");
                 });
 
+            document
+                .getElementById("glossaryDescriptionInput")
+                .addEventListener("input", () => {
+                    document
+                        .getElementById("glossaryDescriptionError")
+                        .classList.add("hidden");
+                    document
+                        .getElementById("glossaryDescriptionInput")
+                        .classList.remove("border-red-500");
+                });
+
+            // Submit new glossary
+            submitNewGlossaryBtn.addEventListener("click", () => {
+                const nameInput = document.getElementById("glossaryNameInput");
+                const descriptionInput = document.getElementById(
+                    "glossaryDescriptionInput",
+                );
+                const name = nameInput.value.trim();
+                const description = descriptionInput.value.trim();
+
+                clearNewGlossaryErrors();
+                let hasError = false;
+
+                if (!name) {
+                    document
+                        .getElementById("glossaryNameError")
+                        .classList.remove("hidden");
+                    nameInput.classList.add("border-red-500");
+                    hasError = true;
+                }
+
+                if (!description) {
+                    document
+                        .getElementById("glossaryDescriptionError")
+                        .classList.remove("hidden");
+                    descriptionInput.classList.add("border-red-500");
+                    hasError = true;
+                }
+
+                if (hasError) return;
+
+                // Create new glossary
+                const newGlossary = {
+                    id: nextGlossaryId++,
+                    name,
+                    description,
+                    terms: [],
+                };
+
+                glossaries.push(newGlossary);
+                saveGlossaries();
+                renderGlossaries();
+                closeNewGlossaryModal();
+
+                // Redirect to the new glossary
+                window.location.href = `/glossary?id=${newGlossary.id}`;
+            });
+
+            // Import glossary
             importConfirmBtn.addEventListener("click", async () => {
                 const file = importFileInput.files[0];
                 if (!file) {
@@ -990,22 +488,62 @@ import "../styles/style.css";
                 }
 
                 try {
-                    const fileContent = await readFileAsText(file);
-                    if (fileExtension === "md") {
-                        const { parseMarkdown } = await import(
-                            "../lib/export_documents.js"
-                        );
-                        const parsedData = parseMarkdown(fileContent);
-                        await importGlossaryData(parsedData);
-                    } else {
-                        const { parseJSON } = await import(
-                            "../lib/export_documents.js"
-                        );
-                        const parsedData = parseJSON(fileContent);
-                        await importGlossaryData(parsedData);
-                    }
-                    closeImportModal();
-                    showSuccessMessage("Glossary imported successfully!");
+                    const reader = new FileReader();
+                    reader.onload = async (e) => {
+                        const fileContent = e.target.result;
+
+                        if (fileExtension === "md") {
+                            const { parseMarkdown } = await import(
+                                "../lib/export_documents.js"
+                            );
+                            const parsedData = parseMarkdown(fileContent);
+
+                            // Create new glossary from imported data
+                            const newGlossary = {
+                                id: nextGlossaryId++,
+                                name: parsedData.title || "Imported Glossary",
+                                description: "Imported from Markdown file",
+                                terms: parsedData.data.map((row, index) => ({
+                                    id: index + 1,
+                                    term: row[0],
+                                    definition: row[1],
+                                    synonyms: Array.isArray(row[2])
+                                        ? row[2]
+                                        : [],
+                                })),
+                            };
+
+                            glossaries.push(newGlossary);
+                            saveGlossaries();
+                            renderGlossaries();
+                            closeImportModal();
+                        } else {
+                            const { parseJSON } = await import(
+                                "../lib/export_documents.js"
+                            );
+                            const parsedData = parseJSON(fileContent);
+
+                            const newGlossary = {
+                                id: nextGlossaryId++,
+                                name: parsedData.title || "Imported Glossary",
+                                description: "Imported from JSON file",
+                                terms: parsedData.data.map((row, index) => ({
+                                    id: index + 1,
+                                    term: row[0],
+                                    definition: row[1],
+                                    synonyms: Array.isArray(row[2])
+                                        ? row[2]
+                                        : [],
+                                })),
+                            };
+
+                            glossaries.push(newGlossary);
+                            saveGlossaries();
+                            renderGlossaries();
+                            closeImportModal();
+                        }
+                    };
+                    reader.readAsText(file);
                 } catch (error) {
                     console.error("Import error:", error);
                     importError.textContent =
@@ -1014,94 +552,20 @@ import "../styles/style.css";
                 }
             });
 
-            // Add term events
-            addTermBtn.addEventListener("click", openModal);
-            cancelBtn.addEventListener("click", closeModal);
-            modalOverlay.addEventListener("click", closeModal);
-            suggestBtn.addEventListener("click", fetchAISuggestions);
-
-            synonymInput.addEventListener("keypress", (e) => {
-                if (e.key === "Enter") {
-                    e.preventDefault();
-                    addSynonymFromInput();
-                }
-            });
-
-            synonymInput.addEventListener("input", () => {
-                document.getElementById("synonymError").classList.add("hidden");
-                synonymInput.classList.remove("border-red-500");
-            });
-
-            document
-                .getElementById("termInput")
-                .addEventListener("input", () => {
-                    document
-                        .getElementById("termError")
-                        .classList.add("hidden");
-                    document
-                        .getElementById("termInput")
-                        .classList.remove("border-red-500");
-                });
-
-            document
-                .getElementById("definitionInput")
-                .addEventListener("input", () => {
-                    document
-                        .getElementById("definitionError")
-                        .classList.add("hidden");
-                    document
-                        .getElementById("definitionInput")
-                        .classList.remove("border-red-500");
-                });
-
-            submitBtn.addEventListener("click", () => {
-                const termInput = document.getElementById("termInput");
-                const definitionInput =
-                    document.getElementById("definitionInput");
-                const term = termInput.value.trim();
-                const definition = definitionInput.value.trim();
-
-                clearErrors();
-                let hasError = false;
-
-                if (!term) {
-                    document
-                        .getElementById("termError")
-                        .classList.remove("hidden");
-                    termInput.classList.add("border-red-500");
-                    hasError = true;
-                }
-
-                if (!definition) {
-                    document
-                        .getElementById("definitionError")
-                        .classList.remove("hidden");
-                    definitionInput.classList.add("border-red-500");
-                    hasError = true;
-                }
-
-                if (hasError) return;
-
-                terms.push({
-                    id: nextId++,
-                    term,
-                    definition,
-                    synonyms:
-                        currentSynonyms.length > 0 ? [...currentSynonyms] : [],
-                });
-                saveTerms();
-                renderTable();
-                closeModal();
-            });
-
+            // Close modals with Escape key
             document.addEventListener("keydown", (e) => {
-                if (e.key === "Escape" && !modal.classList.contains("hidden")) {
-                    closeModal();
+                if (e.key === "Escape") {
+                    if (!newGlossaryModal.classList.contains("hidden")) {
+                        closeNewGlossaryModal();
+                    }
+                    if (!importModal.classList.contains("hidden")) {
+                        closeImportModal();
+                    }
                 }
             });
 
             // ===== INITIALISATION =====
-            renderTable();
+            renderGlossaries();
         </script>
     </body>
 </html>
