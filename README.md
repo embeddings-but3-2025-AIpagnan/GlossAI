@@ -6,10 +6,11 @@ Une application en Python **FastAPI** permettant d'implémenter les fonctionnali
 ##  Pour lancer l'application
 
 ###  Prérequis
-- Python 3.9+ installé  
+- Python 3.9+ installé
 - pip installé
 - venv installé
 - Node.js 18.17.1+ installé
+- Avoir rust et tauri-cli d'installé (et fonctionnels)
 - Avoir ses polices d'execution qui autorisent l'execution des scripts
 ---
 

@@ -4,7 +4,8 @@
   "scripts": {
     "postinstall": "npm install --prefix frontend",
     "dev": "concurrently \"python backend/main.py\" \"cargo tauri dev\"",
-    "build": "mkdir -p build && npm run build:frontend && npm run build:backend && npm run build:tauri",
+    "build": "npm run build:mkOutputDir && npm run build:frontend && npm run build:backend && npm run build:tauri",
+    "build:mkOutputDir": "node -e \"require('fs').mkdirSync('build', { recursive: true });\"",
     "build:frontend": "npm run build --prefix frontend",
     "build:backend": "pyinstaller -y -F -w --distpath ./build/dist --workpath ./build/pybuild --specpath ./backend -n backend backend/main.py && node move-binaries.js",
     "build:tauri": "cargo tauri build",
