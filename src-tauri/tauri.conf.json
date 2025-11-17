@@ -5,7 +5,7 @@
   "identifier": "fr.unilim.iut.glossai",
   "build": {
     "frontendDist": "../frontend/dist",
-    "devUrl": "http://127.0.0.1:32791"
+    "devUrl": "http://localhost:4321"
   },
   "app": {
     "withGlobalTauri": true,

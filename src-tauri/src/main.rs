@@ -119,7 +119,7 @@ fn main() {
                 }
                 if let Some(child) = state.backend_process.lock().unwrap().take() {
                     // On unix, child.kill() sends a SIGKILL, which is causing issues
-                    // with the backend, kill it softlya
+                    // with the backend, kill it softly
                     if cfg!(unix) {
                         let _ = Command::new("kill")
                             .arg("-SIGTERM")

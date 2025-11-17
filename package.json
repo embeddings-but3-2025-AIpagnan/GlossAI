@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "postinstall": "npm install --prefix frontend",
-    "dev": "concurrently \"python backend/main.py\" \"cargo tauri dev\"",
+    "dev": "npm run build:backend && concurrently \"npm run dev --prefix frontend\" \"cargo tauri dev\"",
     "build": "npm run build:mkOutputDir && npm run build:frontend && npm run build:backend && npm run build:tauri",
     "build:mkOutputDir": "node -e \"require('fs').mkdirSync('build', { recursive: true });\"",
     "build:frontend": "npm run build --prefix frontend",
