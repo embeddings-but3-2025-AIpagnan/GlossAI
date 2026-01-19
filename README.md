@@ -3,6 +3,7 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/embeddings-but3-2025-AIpagnan/GlossAI/publish.yml?branch=main&label=CI&logo=github&style=for-the-badge)](https://github.com/embeddings-but3-2025-AIpagnan/GlossAI/actions)
 [![Release](https://img.shields.io/github/v/release/embeddings-but3-2025-AIpagnan/GlossAI?label=version&style=for-the-badge)](https://github.com/embeddings-but3-2025-AIpagnan/GlossAI/releases)
 [![Stars](https://img.shields.io/github/stars/embeddings-but3-2025-AIpagnan/GlossAI?style=for-the-badge)](https://github.com/embeddings-but3-2025-AIpagnan/GlossAI/stargazers)
+[![Doc](https://img.shields.io/badge/DOC-mkdocs-blue?style=for-the-badge)](https://embeddings-but3-2025-aipagnan.github.io/Mkdocs/)
 
 Une solution simple et élégante pour explorer et enrichir des glossaires avec des embeddings et des outils d'IA modernes. GlossAI accélère la création, la recherche et la visualisation de termes spécialisés pour les équipes produit, documentation et recherche.
 
