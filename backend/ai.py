@@ -12,6 +12,7 @@ async def get_synonyms(
     word: str,
     definition: str | None,
     synonyms: list[str],
+    bounding_context: str,
     context: list[str],
 ) -> list[str]:
     try:
@@ -30,7 +31,8 @@ The glossary currently contains the following words: {", ".join(context)}
 
 Find synonyms of the word "{word}"{f" as defined by:\n> {"\n > ".join(definition.split("\n"))}" if definition else "."}
 
-{f"Already known synonyms for the correct sense of the word: {", ".join(synonyms)}" if synonyms else ""}
+The bouding context for this word is: '{bounding_context}'.
+{f"Already known synonyms for the correct sense of the word: {", ".join(synonyms)}." if synonyms else ""}
 
 Your response MUST be in the original word's language.
 Respond ONLY with the synonyms, separated by commas. Do not include any other text in your response.
@@ -63,6 +65,7 @@ async def main() -> None:
             "pawn",
             "A pawn",
             [],
+            "Pieces",
             ["board"],
         ),
     )

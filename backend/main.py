@@ -17,6 +17,7 @@ class SynonymRequest(BaseModel):
     term: str
     definition: str | None
     synonyms: list[str]
+    bounding_context: str
     context: list[str]
 
 
@@ -34,6 +35,7 @@ async def suggest_synonyms(request: SynonymRequest) -> SynonymResponse:
             word=request.term,
             definition=request.definition,
             synonyms=request.synonyms,
+            bounding_context=request.bounding_context,
             context=request.context,
         )
 

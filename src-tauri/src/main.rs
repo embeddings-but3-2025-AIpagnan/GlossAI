@@ -51,6 +51,7 @@ async fn suggest_synonyms(
     term: String,
     definition: Option<String>,
     synonyms: Vec<String>,
+    bounding_context: String,
     context: Vec<String>,
 ) -> Result<Vec<String>, String> {
     let client = reqwest::Client::new();
@@ -62,6 +63,7 @@ async fn suggest_synonyms(
         "term": term,
         "definition": definition,
         "synonyms": synonyms,
+        "bounding_context": bounding_context,
         "context": context
     });
 
