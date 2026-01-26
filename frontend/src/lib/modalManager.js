@@ -1,4 +1,4 @@
-import { GlossaryManager } from "./glossaryManager";
+import { GlossaryManager } from "./Glossaries/glossaryManager";
 import { DeleteUtils } from "./deleteUtils.js";
 
 export class ModalManager {
@@ -25,7 +25,7 @@ export class ModalManager {
     }
 
     view(id) {
-        const g = this.glossaryManager.get(id);
+        const g = this.glossaryManager.getGlossary(id);
         if (!g) return;
 
         document.getElementById("viewGlossaryName").textContent = g.name;
@@ -39,7 +39,7 @@ export class ModalManager {
     }
 
     edit(id) {
-        const g = this.glossaryManager.get(id);
+        const g = this.glossaryManager.getGlossary(id);
         if (!g) return;
         this.glossaryManager.currentEditId = g.id;
 

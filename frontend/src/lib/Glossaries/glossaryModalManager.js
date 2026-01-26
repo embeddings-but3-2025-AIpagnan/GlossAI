@@ -7,7 +7,7 @@ export class GlossaryModalManager extends ModalManager {
     deleteUtils = new DeleteUtils();
 
     view(id) {
-        const g = this.glossaryManager.get(id);
+        const g = this.glossaryManager.getGlossary(id);
         if (!g) return;
 
         document.getElementById("viewGlossaryName").textContent = g.name;
@@ -21,7 +21,7 @@ export class GlossaryModalManager extends ModalManager {
     }
 
     edit(id) {
-        const g = this.glossaryManager.get(id);
+        const g = this.glossaryManager.getGlossary(id);
         if (!g) return;
         this.glossaryManager.currentEditId = g.id;
 
