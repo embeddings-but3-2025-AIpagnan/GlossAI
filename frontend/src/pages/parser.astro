@@ -188,24 +188,6 @@ import "../styles/style.css";
                             <!-- Stats will be populated here -->
                         </div>
 
-                        <!-- Results Tabs -->
-                        <div class="mb-6">
-                            <div class="flex gap-2 bg-gray-200 p-1 rounded-lg">
-                                <button
-                                    id="tabAll"
-                                    class="px-6 py-2 rounded-md font-medium transition-colors bg-white text-gray-900 shadow-sm"
-                                >
-                                    All Identifiers
-                                </button>
-                                <button
-                                    id="tabFiles"
-                                    class="px-6 py-2 rounded-md font-medium transition-colors text-gray-600 hover:text-gray-900"
-                                >
-                                    By File
-                                </button>
-                            </div>
-                        </div>
-
                         <!-- Results Content -->
                         <div class="space-y-6">
                             <!-- All Identifiers View -->
@@ -224,7 +206,7 @@ import "../styles/style.css";
                                                 >
                                                 <th
                                                     class="px-6 py-3 text-left text-sm font-semibold text-gray-900"
-                                                    >Actions</th
+                                                    >Status</th
                                                 >
                                             </tr>
                                         </thead>
@@ -238,7 +220,7 @@ import "../styles/style.css";
                                 </div>
                             </div>
 
-                            <!-- By File View -->
+                            <!-- By File View (Hidden) -->
                             <div id="byFileView" class="hidden">
                                 <div id="filesList" class="space-y-4">
                                     <!-- Will be populated with JavaScript -->
@@ -297,6 +279,7 @@ import "../styles/style.css";
             let selectedPath = null;
             let isFile = true;
             let analysisResults = null;
+            let currentGlossary = null;
 
             // ===== ÉLÉMENTS DU DOM =====
             const backBtn = document.getElementById("backBtn");
@@ -316,14 +299,8 @@ import "../styles/style.css";
             const errorContainer = document.getElementById("errorContainer");
             const errorMessage = document.getElementById("errorMessage");
             const loadingDetails = document.getElementById("loadingDetails");
-            const tabAll = document.getElementById("tabAll");
-            const tabFiles = document.getElementById("tabFiles");
-            const allIdentifiersView =
-                document.getElementById("allIdentifiersView");
-            const byFileView = document.getElementById("byFileView");
             const identifiersTable =
                 document.getElementById("identifiersTable");
-            const filesList = document.getElementById("filesList");
             const summaryStats = document.getElementById("summaryStats");
 
             // ===== FONCTIONS UTILITAIRES =====
@@ -407,7 +384,8 @@ import "../styles/style.css";
 
             function updateSelectionDisplay() {
                 if (selectedPath) {
-                    selectedPathElement.textContent = selectedPath;
+                    // Ajouter la classe de police en gras
+                    selectedPathElement.innerHTML = `<strong>${selectedPath}</strong>`;
                     selectedPathContainer.classList.remove("hidden");
                     analyzeBtn.disabled = false;
                     analyzeBtn.classList.remove(
@@ -431,9 +409,36 @@ import "../styles/style.css";
                 resultsContainer.classList.add("hidden");
             }
 
+            // ===== CHARGEMENT DU GLOSSAIRE =====
+            function loadGlossary() {
+                if (!glossaryId) {
+                    currentGlossary = null;
+                    return;
+                }
+
+                try {
+                    const glossaries = JSON.parse(localStorage.getItem("glossaries")) || [];
+                    currentGlossary = glossaries.find(g => g.id === parseInt(glossaryId)) || null;
+                } catch (error) {
+                    console.error("Error loading glossary:", error);
+                    currentGlossary = null;
+                }
+            }
+
+            function isTermInGlossary(term) {
+                if (!currentGlossary || !currentGlossary.terms) return false;
+                
+                return currentGlossary.terms.some(t => 
+                    t.term.toLowerCase() === term.toLowerCase()
+                );
+            }
+
             // ===== ANALYSE =====
             async function analyze() {
                 if (!selectedPath) return;
+
+                // Charger le glossaire avant l'analyse
+                loadGlossary();
 
                 clearError();
                 showLoading(
@@ -472,18 +477,8 @@ import "../styles/style.css";
                 // Afficher tous les identifiants
                 displayAllIdentifiers();
 
-                // Afficher par fichier (si dossier)
-                if (!isFile) {
-                    displayByFile();
-                }
-
                 // Afficher le conteneur de résultats
                 resultsContainer.classList.remove("hidden");
-
-                // Gérer les onglets
-                if (isFile) {
-                    tabFiles.style.display = "none";
-                }
             }
 
             function updateSummaryStats() {
@@ -494,6 +489,7 @@ import "../styles/style.css";
                         0,
                     );
                     const unique = Object.keys(analysisResults.names).length;
+                    const fileName = selectedPath ? selectedPath.split("/").pop() : "File";
 
                     summaryStats.innerHTML = `
                         <div class="bg-blue-50 p-4 rounded-lg">
@@ -501,12 +497,12 @@ import "../styles/style.css";
                             <p class="text-2xl font-semibold text-blue-900">${total}</p>
                         </div>
                         <div class="bg-green-50 p-4 rounded-lg">
-                            <p class="text-sm text-green-600">Unique Identifiers</p>
-                            <p class="text-2xl font-semibold text-green-900">${unique}</p>
+                            <p class="text-sm text-green-600">Files Parsed</p>
+                            <p class="text-2xl font-semibold text-green-900">1</p>
                         </div>
                         <div class="bg-purple-50 p-4 rounded-lg">
-                            <p class="text-sm text-purple-600">File Type</p>
-                            <p class="text-2xl font-semibold text-purple-900">Java</p>
+                            <p class="text-sm text-purple-600">File Name</p>
+                            <p class="text-2xl font-semibold text-purple-900 truncate" title="${fileName}">${fileName}</p>
                         </div>
                     `;
                 } else {
@@ -518,19 +514,20 @@ import "../styles/style.css";
                         analysisResults.names,
                     ).length;
                     const fileCount = Object.keys(analysisResults.files).length;
+                    const folderName = selectedPath ? selectedPath.split("/").pop() : "Folder";
 
                     summaryStats.innerHTML = `
                         <div class="bg-blue-50 p-4 rounded-lg">
-                            <p class="text-sm text-blue-600">Files Analyzed</p>
-                            <p class="text-2xl font-semibold text-blue-900">${fileCount}</p>
+                            <p class="text-sm text-blue-600">Total Occurrences</p>
+                            <p class="text-2xl font-semibold text-blue-900">${totalOccurrences}</p>
                         </div>
                         <div class="bg-green-50 p-4 rounded-lg">
-                            <p class="text-sm text-green-600">Total Occurrences</p>
-                            <p class="text-2xl font-semibold text-green-900">${totalOccurrences}</p>
+                            <p class="text-sm text-green-600">Files Parsed</p>
+                            <p class="text-2xl font-semibold text-green-900">${fileCount}</p>
                         </div>
                         <div class="bg-purple-50 p-4 rounded-lg">
-                            <p class="text-sm text-purple-600">Unique Identifiers</p>
-                            <p class="text-2xl font-semibold text-purple-900">${uniqueIdentifiers}</p>
+                            <p class="text-sm text-purple-600">Folder Name</p>
+                            <p class="text-2xl font-semibold text-purple-900 truncate" title="${folderName}">${folderName}</p>
                         </div>
                     `;
                 }
@@ -546,7 +543,10 @@ import "../styles/style.css";
 
                 identifiersTable.innerHTML = sortedNames
                     .map(
-                        ([name, count]) => `
+                        ([name, count]) => {
+                            const inGlossary = isTermInGlossary(name);
+                            
+                            return `
                     <tr class="hover:bg-gray-50">
                         <td class="px-6 py-4">
                             <span class="font-mono text-sm bg-gray-100 px-2 py-1 rounded">${name}</span>
@@ -557,73 +557,33 @@ import "../styles/style.css";
                             </span>
                         </td>
                         <td class="px-6 py-4">
-                            <button class="text-blue-600 hover:text-blue-900 text-sm font-medium add-identifier" data-identifier="${name}">
-                                Add to Glossary
-                            </button>
+                            ${inGlossary ? 
+                                `<span class="text-green-600 text-sm font-medium flex items-center gap-1">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                    </svg>
+                                    Already in glossary
+                                </span>` : 
+                                glossaryId ? 
+                                `<button class="text-blue-600 hover:text-blue-900 text-sm font-medium add-identifier" data-identifier="${name}">
+                                    Add to Glossary
+                                </button>` :
+                                `<span class="text-gray-500 text-sm">Select a glossary to add</span>`
+                            }
                         </td>
                     </tr>
-                `,
+                `;
+                        }
                     )
                     .join("");
 
-                // Ajouter les écouteurs d'événements
+                // Ajouter les écouteurs d'événements seulement pour les boutons d'ajout
                 document.querySelectorAll(".add-identifier").forEach((btn) => {
                     btn.addEventListener("click", function () {
                         const identifier = this.getAttribute("data-identifier");
                         addIdentifierToGlossary(identifier);
                     });
                 });
-            }
-
-            function displayByFile() {
-                if (isFile) return;
-
-                filesList.innerHTML = Object.entries(analysisResults.files)
-                    .map(([filePath, fileData]) => {
-                        const fileName = filePath.split("/").pop();
-                        const total = Object.values(fileData.names).reduce(
-                            (a, b) => a + b,
-                            0,
-                        );
-                        const unique = Object.keys(fileData.names).length;
-
-                        return `
-                        <div class="border border-gray-200 rounded-lg overflow-hidden">
-                            <div class="bg-gray-50 px-4 py-3 flex justify-between items-center">
-                                <div>
-                                    <span class="font-medium text-gray-900">${fileName}</span>
-                                    <span class="text-sm text-gray-500 ml-2">${filePath}</span>
-                                </div>
-                                <span class="text-sm text-gray-600">
-                                    ${unique} unique • ${total} total
-                                </span>
-                            </div>
-                            <div class="p-4">
-                                <div class="flex flex-wrap gap-2">
-                                    ${Object.entries(fileData.names)
-                                        .slice(0, 10)
-                                        .map(
-                                            ([name, count]) => `
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-800">
-                                            ${name}
-                                            <span class="ml-1 text-xs text-gray-500">(${count})</span>
-                                        </span>
-                                    `,
-                                        )
-                                        .join("")}
-                                    ${
-                                        Object.keys(fileData.names).length > 10
-                                            ? `<span class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-200 text-gray-600">
-                                            +${Object.keys(fileData.names).length - 10} more
-                                        </span>`
-                                            : ""
-                                    }
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    })
-                    .join("");
             }
 
             // ===== AJOUT AU GLOSSAIRE =====
@@ -648,8 +608,20 @@ import "../styles/style.css";
                         return;
                     }
 
-                    // Ajouter le terme au glossaire
+                    // Vérifier si le terme n'existe pas déjà
                     const glossary = glossaries[glossaryIndex];
+                    const termExists = glossary.terms.some(
+                        t => t.term.toLowerCase() === identifier.toLowerCase()
+                    );
+
+                    if (termExists) {
+                        showMessage(`"${identifier}" is already in the glossary.`, "info");
+                        // Recharger l'affichage pour mettre à jour les statuts
+                        displayAllIdentifiers();
+                        return;
+                    }
+
+                    // Ajouter le terme au glossaire
                     const nextId =
                         Math.max(...glossary.terms.map((t) => t.id), 0) + 1;
 
@@ -666,19 +638,23 @@ import "../styles/style.css";
                         JSON.stringify(glossaries),
                     );
 
+                    // Recharger le glossaire courant
+                    loadGlossary();
+
                     // Afficher un message de succès
                     showMessage(
                         `"${identifier}" added to glossary!`,
                         "success",
                     );
+
+                    // Recharger l'affichage pour mettre à jour les statuts
+                    displayAllIdentifiers();
                 } catch (error) {
                     showError(
                         `Failed to add identifier: ${error.message || error}`,
                     );
                 }
             }
-
-            
 
             // ===== GESTION DES MESSAGES =====
             function showMessage(message, type = "success") {
@@ -718,60 +694,11 @@ import "../styles/style.css";
                 }, 5000);
             }
 
-            // ===== GESTION DES ONGLETS =====
-            function switchTab(tab) {
-                if (tab === "all") {
-                    tabAll.classList.remove(
-                        "text-gray-600",
-                        "hover:text-gray-900",
-                    );
-                    tabAll.classList.add(
-                        "bg-white",
-                        "text-gray-900",
-                        "shadow-sm",
-                    );
-                    tabFiles.classList.remove(
-                        "bg-white",
-                        "text-gray-900",
-                        "shadow-sm",
-                    );
-                    tabFiles.classList.add(
-                        "text-gray-600",
-                        "hover:text-gray-900",
-                    );
-                    allIdentifiersView.classList.remove("hidden");
-                    byFileView.classList.add("hidden");
-                } else {
-                    tabFiles.classList.remove(
-                        "text-gray-600",
-                        "hover:text-gray-900",
-                    );
-                    tabFiles.classList.add(
-                        "bg-white",
-                        "text-gray-900",
-                        "shadow-sm",
-                    );
-                    tabAll.classList.remove(
-                        "bg-white",
-                        "text-gray-900",
-                        "shadow-sm",
-                    );
-                    tabAll.classList.add(
-                        "text-gray-600",
-                        "hover:text-gray-900",
-                    );
-                    byFileView.classList.remove("hidden");
-                    allIdentifiersView.classList.add("hidden");
-                }
-            }
-
             // ===== ÉCOUTEURS D'ÉVÉNEMENTS =====
             selectFileBtn.addEventListener("click", selectFile);
             selectFolderBtn.addEventListener("click", selectFolder);
             clearSelectionBtn.addEventListener("click", clearSelection);
             analyzeBtn.addEventListener("click", analyze);
-            tabAll.addEventListener("click", () => switchTab("all"));
-            tabFiles.addEventListener("click", () => switchTab("files"));
 
             // ===== INITIALISATION =====
             updateBackButton();
