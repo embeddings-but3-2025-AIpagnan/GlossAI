@@ -1,134 +1,183 @@
-import sys
+import logging
+from collections import Counter
+from collections.abc import Mapping
+from dataclasses import dataclass
 from pathlib import Path
-from collections import defaultdict, Counter
+from re import Pattern, compile
 
-try:
-    from tree_sitter import Language, Parser
-    import tree_sitter_java as tsjava
-except ImportError:
-    print("tree sitter introuvable")
-    sys.exit(1)
+import tree_sitter_java as tsjava
+import tree_sitter_python as tspython
+from tree_sitter import Language, Node, Parser
 
-
-# déclaration des termes
-NODE_TYPES = [
-    'class_declaration',
-    'method_declaration',
-    'variable_declarator',
-    'formal_parameter',
-    'interface_declaration',
-    'enum_declaration',
-    'field_declaration'
-]
+logger = logging.getLogger(__name__)
 
 
-def extract_name(node):  # extrait le nom d'un nœud Java selon son type.
-    if 'declaration' in node.type:
-        name_node = node.child_by_field_name('name')
-        return name_node.text.decode('utf8') if name_node else None
-    
-    if node.type == 'variable_declarator':
-        name_node = node.child_by_field_name('name')
-        return name_node.text.decode('utf8') if name_node else None
-    
-    if node.type == 'formal_parameter':
-        name_node = node.child_by_field_name('name')
-        return name_node.text.decode('utf8') if name_node else None
+@dataclass
+class LanguageConfig:
+    """Definition of the configuration for a language."""
 
-    return None
+    ts_language: Language
+    extensions: list[str]
+    nodes: list[str]
+    excludes: list[Pattern[str]]
 
 
-def traverse(node, names_list):  # parcourt récursivement l'arbre syntaxique et collecte les noms déclarés.
-    if node.type in NODE_TYPES:
-        name = extract_name(node)
-        if name and len(name) > 0:
-            names_list.append(name)
-    
+@dataclass
+class FileResults:
+    """Results of analyzing a single file."""
+
+    lang: str
+    words: Mapping[str, int]
+
+
+@dataclass
+class DirectoryResults:
+    """Results of analyzing a directory."""
+
+    files: Mapping[Path, FileResults]
+    words: Mapping[str, int]
+
+
+DEFAULT_CONFIG = {
+    "java": LanguageConfig(
+        Language(tsjava.language()),
+        ["java"],
+        [
+            "class_declaration",
+            "method_declaration",
+            "variable_declarator",
+            "formal_parameter",
+            "interface_declaration",
+            "enum_declaration",
+        ],
+        [],
+    ),
+    "python": LanguageConfig(
+        Language(tspython.language()),
+        ["py"],
+        [
+            "class_definition",
+            "function_definition",
+            "async_function_definition",
+            "default_parameter",
+            "typed_parameter",
+        ],
+        [compile(pattern) for pattern in ["self", "cls", "__.*__"]],
+    ),
+}
+
+
+def get_language(path: Path) -> tuple[str, LanguageConfig]:
+    suffix = path.suffix.lower().removeprefix(".")
+    for name, language in DEFAULT_CONFIG.items():
+        if suffix in language.extensions:
+            return name, language
+
+    msg = f"File type not supported: {suffix}"
+    raise ValueError(msg)
+
+
+def extract_name(node: Node) -> str | None:
+    name_node = node.child_by_field_name("name")
+    if not name_node:
+        logger.warning("Node %s didn't have a `name` children", node.type)
+        return None
+
+    name: str | None = name_node.text.decode("utf8")
+    if not name:
+        logger.warning("Name of node %s was empty", node.type)
+        return None
+
+    return name
+
+
+def traverse(node: Node, names: list[str], node_types: list[str]) -> None:
+    if node.type in node_types and (name := extract_name(node)):
+        names.append(name)
+    elif node.type == "parameters":
+        names.extend(
+            filter(
+                bool,
+                (
+                    child.text.decode("utf8")
+                    for child in node.children
+                    if child.type == "identifier"
+                ),
+            ),
+        )
+    elif node.type == "assignment":
+        child = node.children[0]
+        if child.type == "attribute" and (name := child.text.decode("utf8")):
+            names.extend(name.split("."))
+    elif node.type == "for_statement":
+        name_node = node.child_by_field_name("type=identifier")
+        if name_node and (name := name_node.text.decode("utf8")):
+            names.append(name)
+
     for child in node.children:
-        traverse(child, names_list)
+        traverse(child, names, node_types)
 
 
-def parse_file(filepath):  # parse un fichier Java et retourne l'arbre syntaxique.
-    file_path = Path(filepath)
-    
-    if not file_path.exists():
-        raise FileNotFoundError(f'Le fichier "{filepath}" n\'existe pas.')
-    if file_path.suffix.lower() != '.java':
-        raise ValueError(f'Extension de fichier non supportée pour "{filepath}". '
-                        f'Seuls les fichiers .java sont acceptés.')
-    
-    # Lire fichier
-    source_code = file_path.read_bytes()
-    
-    parser = Parser()
-    
-    java_language = Language(tsjava.language())
-    # gestion des versions de tree sitter
-    if hasattr(parser, 'set_language'):
-        parser.set_language(java_language)
-    elif hasattr(parser, 'language'):  
-        parser.language = java_language
-    else:
-        parser = Parser(java_language)
-    
-    tree = parser.parse(source_code)
-    
-    return tree, tree.root_node
+def analyze_code(
+    code: bytes,
+    language_name: str,
+    language: LanguageConfig,
+) -> FileResults:
+    parser = Parser(language.ts_language)
+    tree = parser.parse(code)
+
+    names: list[str] = []
+    traverse(tree.root_node, names, language.nodes)
+
+    names = [
+        name
+        for name in names
+        if not any(pattern.fullmatch(name) for pattern in language.excludes)
+    ]
+
+    return FileResults(language_name, Counter(names))
 
 
-def analyze_file(filepath, return_data=False):  # analyse un fichier Java.
-    try:
-        tree, root_node = parse_file(filepath)
-        
-        names_list = []
-        traverse(root_node, names_list)
-        
-        # compter les occurrences
-        name_counter = Counter(names_list)
-        sorted_names = sorted(name_counter.items(), key=lambda x: x[1], reverse=True)
-        
-        if return_data:
-            return {
-                'lang': 'java',
-                'names_list': names_list,
-                'sorted': sorted_names,
-                'total': len(names_list),
-                'unique': len(name_counter)
-            }
-        
-        # ffichage normal
-        print(f"\n{filepath}")
-        print(f"Langage détecté: JAVA")
-        print(f"\nNoms déclarés ({len(sorted_names)} uniques):\n")
-        
-        for name, count in sorted_names:
-            plural = 's' if count > 1 else ''
+def analyze_file(path: Path) -> FileResults:
+    language_name, language = get_language(path)
+    # might raise a FileNotFoundError, let it bubble up
+    source_code = path.read_bytes()
 
-            print(f"{name:<30} → {count} occurrence{plural}")
-        
-        total = len(names_list)
-        print(f"\nTotal: {total} déclarations\n")
-        
-    except Exception as e:
-        if return_data:
-            raise e
-        else:
-
-            print(f"Erreur: {e}", file=sys.stderr)
-            sys.exit(1)
+    return analyze_code(source_code, language_name, language)
 
 
-def analyze_file_for_test(filepath):  # analyze_file mais qui retourne les données au lieu de les afficher.
-    return analyze_file(filepath, return_data=True)
+def find_files(path: Path) -> list[Path]:
+    files: list[Path] = []
+    for language in DEFAULT_CONFIG.values():
+        for ext in language.extensions:
+            files.extend(
+                file
+                for file in path.rglob(f"*.{ext}")
+                if file.is_file()
+                if not any(part.startswith(".") for part in file.parts)
+            )
+
+    return files
 
 
-def main():
-    if len(sys.argv) < 2:
-        sys.exit(1)
-    
-    filepath = sys.argv[1]
-    analyze_file(filepath)
+def analyze_directory(path: Path) -> DirectoryResults:
+    files_path = find_files(path)
+    files = {file: analyze_file(file) for file in files_path}
+
+    words: Counter[str] = Counter()
+    for file in files.values():
+        words.update(file.words)
+
+    return DirectoryResults(files, words)
 
 
-if __name__ == '__main__':
+def main() -> None:
+    print(
+        analyze_directory(
+            Path("/home/zacharie/Downloads/Tennis-Refactoring-Kata-main/python"),
+        ),
+    )
+
+
+if __name__ == "__main__":
     main()

@@ -51,6 +51,15 @@ jobs:
       - name: build backend
         run: npm run build:backend
 
+      - name: sign backend binary (macos only)
+        if: matrix.platform == 'macos-latest'
+        run: |
+          for bin in build/dist/backend-*; do
+            if [[ -f "$bin" && ! -L "$bin" ]]; then
+              codesign --force --deep --sign - "$bin"
+            fi
+          done
+
       - name: build frontend
         run: npm run build:frontend
 
