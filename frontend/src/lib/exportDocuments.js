@@ -1,6 +1,6 @@
-function generateMarkdown(data, headers = ["Word", "Definition", "Synonyms"], title = "Glossary", description = "") {
+function generateMarkdown(data, headers = ["Word", "Definition", "Bounding Context", "Synonyms"], title = "Glossary", description = "") {
   if (!Array.isArray(data) || data.some(row => !Array.isArray(row) || row.length !== headers.length)) {
-    throw new Error(`Invalid data format`);
+    throw new Error(`Invalid data format. Expected ${headers.length} columns but got varying row lengths.`);
   }
 
   let markdown = `# ${title}\n\n`;
@@ -18,7 +18,16 @@ function generateMarkdown(data, headers = ["Word", "Definition", "Synonyms"], ti
   const separatorRow = `| ${headers.map(() => "---").join(" | ")} |`;
 
   const dataRows = data.map(row => {
-    const formattedRow = row.map(cell => {
+    const formattedRow = row.map((cell, index) => {
+      // Traitement spécial pour la colonne des synonymes (dernière colonne)
+      if (index === headers.length - 1) { // Dernière colonne = Synonyms
+        if (Array.isArray(cell)) {
+          return cell.length > 0 ? cell.join(", ") : "-";
+        }
+        return String(cell || "-");
+      }
+      
+      // Pour les autres colonnes (Word, Definition, Bounding Context)
       if (Array.isArray(cell)) {
         return cell.length > 0 ? cell.join(", ") : "-";
       }
@@ -65,6 +74,11 @@ function parseMarkdown(markdownContent) {
     .filter(cell => cell.trim() !== '')
     .map(cell => cell.trim());
 
+  // Si le fichier a l'ancien format (3 colonnes), ajouter "Bounding Context"
+  if (headers.length === 3 && headers[2] === "Synonyms") {
+    headers.splice(2, 0, "Bounding Context");
+  }
+
   // Extraction des données
   const data = [];
   for (let i = tableStart + 2; i < lines.length; i++) {
@@ -75,7 +89,16 @@ function parseMarkdown(markdownContent) {
       .filter(cell => cell.trim() !== '')
       .map(cell => cell.trim());
 
+    // Si le fichier a l'ancien format (3 colonnes), ajouter une chaîne vide pour Bounding Context
+    if (row.length === 3 && headers.length === 4) {
+      row.splice(2, 0, ""); // Ajoute une chaîne vide pour Bounding Context
+    }
+
     if (row.length === headers.length) {
+      // Convertir les synonymes en tableau si c'est une chaîne
+      if (row[3] && typeof row[3] === 'string') {
+        row[3] = row[3].split(',').map(s => s.trim()).filter(s => s);
+      }
       data.push(row);
     }
   }
@@ -88,16 +111,28 @@ function parseMarkdown(markdownContent) {
   };
 }
 
-function generateJSON(data, headers = ["Word", "Definition", "Synonyms"], title = "Glossary", description = "") {
+function generateJSON(data, headers = ["Word", "Definition", "Bounding Context", "Synonyms"], title = "Glossary", description = "") {
   const structuredData = {
     glossary: {
       name: title,
       description: description,
       exportDate: new Date().toISOString(),
-      termCount: data.length
+      termCount: data.length,
+      format: {
+        version: "1.1",
+        headers: headers
+      }
     },
-    headers: headers,
-    data: data
+    terms: data.map((row, index) => {
+      const term = {
+        id: index + 1,
+        word: row[0],
+        definition: row[1],
+        boundingContext: row[2] || "",
+        synonyms: Array.isArray(row[3]) ? row[3] : (typeof row[3] === 'string' ? row[3].split(',').map(s => s.trim()).filter(s => s) : [])
+      };
+      return term;
+    })
   };
 
   const blob = new Blob([JSON.stringify(structuredData, null, 2)], { type: "application/json" });
@@ -118,19 +153,70 @@ function parseJSON(jsonContent) {
     // Support des anciens et nouveaux formats
     if (parsedData.glossary) {
       // Nouveau format avec métadonnées
-      return {
-        title: parsedData.glossary.name || parsedData.title || "Imported Glossary",
-        description: parsedData.glossary.description || "",
-        headers: parsedData.headers,
-        data: parsedData.data
-      };
+      let headers = parsedData.headers || ["Word", "Definition", "Synonyms"];
+      
+      // Si c'est l'ancien format (3 colonnes), ajouter "Bounding Context"
+      if (headers.length === 3 && headers[2] === "Synonyms") {
+        headers.splice(2, 0, "Bounding Context");
+      }
+      
+      // Si les données sont dans un format structuré avec termes
+      if (parsedData.terms && Array.isArray(parsedData.terms)) {
+        const data = parsedData.terms.map(term => [
+          term.word || term.term || "",
+          term.definition || "",
+          term.boundingContext || "",
+          term.synonyms || []
+        ]);
+        
+        return {
+          title: parsedData.glossary.name || parsedData.title || "Imported Glossary",
+          description: parsedData.glossary.description || "",
+          headers: headers,
+          data: data
+        };
+      } 
+      // Si les données sont dans le format tableau simple
+      else if (parsedData.data && Array.isArray(parsedData.data)) {
+        // Si les données ont l'ancien format (3 colonnes), ajouter une chaîne vide pour Bounding Context
+        const data = parsedData.data.map(row => {
+          if (row.length === 3 && headers.length === 4) {
+            return [row[0], row[1], "", row[2]];
+          }
+          return row;
+        });
+        
+        return {
+          title: parsedData.glossary.name || parsedData.title || "Imported Glossary",
+          description: parsedData.glossary.description || "",
+          headers: headers,
+          data: data
+        };
+      } else {
+        throw new Error("Invalid JSON structure");
+      }
     } else if (parsedData.title && parsedData.data) {
-      // Ancien format
+      // Ancien format sans glossary
+      let headers = parsedData.headers || ["Word", "Definition", "Synonyms"];
+      
+      // Si c'est l'ancien format (3 colonnes), ajouter "Bounding Context"
+      if (headers.length === 3 && headers[2] === "Synonyms") {
+        headers.splice(2, 0, "Bounding Context");
+      }
+      
+      // Si les données ont l'ancien format (3 colonnes), ajouter une chaîne vide pour Bounding Context
+      const data = parsedData.data.map(row => {
+        if (row.length === 3 && headers.length === 4) {
+          return [row[0], row[1], "", row[2]];
+        }
+        return row;
+      });
+      
       return {
         title: parsedData.title,
         description: "",
-        headers: parsedData.headers,
-        data: parsedData.data
+        headers: headers,
+        data: data
       };
     } else {
       throw new Error("Invalid JSON structure");
@@ -141,9 +227,9 @@ function parseJSON(jsonContent) {
 }
 
 // Fonctions pour la prévisualisation (retournent le contenu sans télécharger)
-function generateMarkdownString(data, headers = ["Word", "Definition", "Synonyms"], title = "Glossary", description = "") {
+function generateMarkdownString(data, headers = ["Word", "Definition", "Bounding Context", "Synonyms"], title = "Glossary", description = "") {
   if (!Array.isArray(data) || data.some(row => !Array.isArray(row) || row.length !== headers.length)) {
-    throw new Error(`Invalid data format`);
+    throw new Error(`Invalid data format. Expected ${headers.length} columns but got varying row lengths.`);
   }
 
   let markdown = `# ${title}\n\n`;
@@ -161,7 +247,16 @@ function generateMarkdownString(data, headers = ["Word", "Definition", "Synonyms
   const separatorRow = `| ${headers.map(() => "---").join(" | ")} |`;
 
   const dataRows = data.map(row => {
-    const formattedRow = row.map(cell => {
+    const formattedRow = row.map((cell, index) => {
+      // Traitement spécial pour la colonne des synonymes (dernière colonne)
+      if (index === headers.length - 1) { // Dernière colonne = Synonyms
+        if (Array.isArray(cell)) {
+          return cell.length > 0 ? cell.join(", ") : "-";
+        }
+        return String(cell || "-");
+      }
+      
+      // Pour les autres colonnes (Word, Definition, Bounding Context)
       if (Array.isArray(cell)) {
         return cell.length > 0 ? cell.join(", ") : "-";
       }
@@ -173,16 +268,28 @@ function generateMarkdownString(data, headers = ["Word", "Definition", "Synonyms
   return markdown + headerRow + "\n" + separatorRow + "\n" + dataRows;
 }
 
-function generateJSONString(data, headers = ["Word", "Definition", "Synonyms"], title = "Glossary", description = "") {
+function generateJSONString(data, headers = ["Word", "Definition", "Bounding Context", "Synonyms"], title = "Glossary", description = "") {
   const structuredData = {
     glossary: {
       name: title,
       description: description,
       exportDate: new Date().toISOString(),
-      termCount: data.length
+      termCount: data.length,
+      format: {
+        version: "1.1",
+        headers: headers
+      }
     },
-    headers: headers,
-    data: data
+    terms: data.map((row, index) => {
+      const term = {
+        id: index + 1,
+        word: row[0],
+        definition: row[1],
+        boundingContext: row[2] || "",
+        synonyms: Array.isArray(row[3]) ? row[3] : (typeof row[3] === 'string' ? row[3].split(',').map(s => s.trim()).filter(s => s) : [])
+      };
+      return term;
+    })
   };
 
   return JSON.stringify(structuredData, null, 2);

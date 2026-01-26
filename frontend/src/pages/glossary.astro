@@ -79,22 +79,11 @@ import "../styles/style.css";
                     <table class="w-full">
                         <thead class="bg-gray-50 border-b border-gray-200">
                             <tr>
-                                <th
-                                    class="px-6 py-4 text-left text-sm font-semibold text-gray-900"
-                                    >Word</th
-                                >
-                                <th
-                                    class="px-6 py-4 text-left text-sm font-semibold text-gray-900"
-                                    >Definition</th
-                                >
-                                <th
-                                    class="px-6 py-4 text-left text-sm font-semibold text-gray-900"
-                                    >Synonyms</th
-                                >
-                                <th
-                                    class="px-6 py-4 text-left text-sm font-semibold text-gray-900"
-                                    >Actions</th
-                                >
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Word</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Definition</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Bounding Context</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Synonyms</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Actions</th>
                             </tr>
                         </thead>
                         <tbody
@@ -136,6 +125,24 @@ import "../styles/style.css";
                         <h4 class="text-lg font-semibold text-gray-900 mb-4">
                             Word details
                         </h4>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-900 mb-2">
+                                Bounding context <span class="text-red-600">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                id="boundingContextInput"
+                                placeholder="Enter bounding context (e.g., 'Artificial Intelligence', 'Web Development')"
+                                list="boundingContextList"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all bg-white"
+                            />
+                            <datalist id="boundingContextList">
+                            </datalist>
+                            <p id="boundingContextError" class="text-red-600 text-sm mt-1 hidden">
+                                This field is required!
+                            </p>
+                        </div>
 
                         <div>
                             <label
@@ -412,6 +419,32 @@ import "../styles/style.css";
             let deleteUtils = null;
             let isPreviewVisible = true;
 
+            let currentBoundingContext = "";
+            let existingBoundingContexts = [];
+
+            // Fonction pour extraire tous les contextes existants du glossaire
+            function extractExistingBoundingContexts() {
+                existingBoundingContexts = [];
+                
+                // Parcourir tous les termes pour collecter les contextes uniques
+                terms.forEach(term => {
+                    if (term.boundingContext && !existingBoundingContexts.includes(term.boundingContext)) {
+                        existingBoundingContexts.push(term.boundingContext);
+                    }
+                });
+                
+                // Mettre à jour la datalist
+                updateBoundingContextList();
+            }
+
+            // Fonction pour mettre à jour la datalist des contextes
+            function updateBoundingContextList() {
+                const datalist = document.getElementById('boundingContextList');
+                datalist.innerHTML = existingBoundingContexts
+                    .map(context => `<option value="${context}">`)
+                    .join('');
+            }
+
             // ===== ÉLÉMENTS DU DOM =====
             // Modal Export elements
             const exportModal = document.getElementById("exportModal");
@@ -465,6 +498,7 @@ import "../styles/style.css";
                 }
             }
 
+            // Modifiez la fonction renderTable pour inclure le bounding context
             function renderTable() {
                 const tbody = document.getElementById("glossaryTable");
 
@@ -477,41 +511,44 @@ import "../styles/style.css";
                 tbody.innerHTML = terms
                     .map(
                         (term) => `
-                <tr class="hover:bg-gray-50 transition-colors">
-                    <td class="px-6 py-4 font-medium text-gray-900">
-                        ${shorten(term.term)}
-                    </td>
-                    <td class="px-6 py-4 text-gray-700">
-                        <div 
-                            class="definition-cell cursor-help relative group"
-                            data-definition="${term.definition.replace(/"/g, "&quot;")}"
-                        >
-                            ${shorten(term.definition)}
-                        </div>
-                    </td>
-                    <td class="px-6 py-4 text-gray-700">
-                        ${Array.isArray(term.synonyms) ? term.synonyms.join(", ") : term.synonyms}
-                    </td>
-                    <td class="px-6 py-4">
-                        <button 
-                            class="edit-btn text-blue-600 hover:text-blue-900 font-medium text-sm mr-4"
-                            data-id="${term.id}"
-                        >
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                            </svg>
-                        </button>
-                        <button 
-                            class="delete-btn text-red-600 hover:text-red-900 font-medium text-sm"
-                            data-id="${term.id}"
-                        >
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                            </svg>
-                        </button>
-                    </td>
-                </tr>
-            `,
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-4 font-medium text-gray-900">
+                            ${shorten(term.term)}
+                        </td>
+                        <td class="px-6 py-4 text-gray-700">
+                            <div 
+                                class="definition-cell cursor-help relative group"
+                                data-definition="${term.definition.replace(/"/g, "&quot;")}"
+                            >
+                                ${shorten(term.definition)}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-gray-700">
+                            ${term.boundingContext ? shorten(term.boundingContext) : "-"}
+                        </td>
+                        <td class="px-6 py-4 text-gray-700">
+                            ${Array.isArray(term.synonyms) ? term.synonyms.join(", ") : term.synonyms}
+                        </td>
+                        <td class="px-6 py-4">
+                            <button 
+                                class="edit-btn text-blue-600 hover:text-blue-900 font-medium text-sm mr-4"
+                                data-id="${term.id}"
+                            >
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                </svg>
+                            </button>
+                            <button 
+                                class="delete-btn text-red-600 hover:text-red-900 font-medium text-sm"
+                                data-id="${term.id}"
+                            >
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                `
                     )
                     .join("");
 
@@ -625,11 +662,10 @@ import "../styles/style.css";
 
                 // Remplir le modal avec les données existantes
                 document.getElementById("termInput").value = term.term;
-                document.getElementById("definitionInput").value =
-                    term.definition;
-                currentSynonyms = Array.isArray(term.synonyms)
-                    ? [...term.synonyms]
-                    : [];
+                document.getElementById("definitionInput").value = term.definition;
+                document.getElementById("boundingContextInput").value = term.boundingContext || "";
+                currentSynonyms = Array.isArray(term.synonyms) ? [...term.synonyms] : [];
+                currentBoundingContext = term.boundingContext || "";
 
                 renderSynonymTags();
 
@@ -668,6 +704,7 @@ import "../styles/style.css";
                     terms: terms.map((term) => [
                         term.term,
                         term.definition,
+                        term.boundingContext || "", // Ajout du bounding context
                         Array.isArray(term.synonyms) ? term.synonyms : [],
                     ]),
                 };
@@ -817,8 +854,10 @@ import "../styles/style.css";
                 // Réinitialiser le formulaire
                 document.getElementById("termInput").value = "";
                 document.getElementById("definitionInput").value = "";
+                document.getElementById("boundingContextInput").value = "";
                 document.getElementById("synonymInput").value = "";
                 currentSynonyms = [];
+                currentBoundingContext = "";
                 aiSuggestions = [];
                 renderSynonymTags();
                 document
@@ -838,12 +877,18 @@ import "../styles/style.css";
                 document
                     .getElementById("definitionError")
                     .classList.add("hidden");
+                document
+                    .getElementById("boundingContextError")
+                    .classList.add("hidden");
                 document.getElementById("synonymError").classList.add("hidden");
                 document
                     .getElementById("termInput")
                     .classList.remove("border-red-500");
                 document
                     .getElementById("definitionInput")
+                    .classList.remove("border-red-500");
+                document
+                    .getElementById("boundingContextInput")
                     .classList.remove("border-red-500");
                 document
                     .getElementById("synonymInput")
@@ -1031,16 +1076,17 @@ import "../styles/style.css";
             const { invoke } = window.__TAURI__.core;
             async function fetchAISuggestions() {
                 const termInput = document.getElementById("termInput");
-                const definitionInput =
-                    document.getElementById("definitionInput");
+                const definitionInput = document.getElementById("definitionInput");
+                const boundingContextInput = document.getElementById("boundingContextInput");
                 const synonymInput = document.getElementById("synonymInput");
                 const suggestBtn = document.getElementById("suggestBtn");
                 const aiSuggestionsContainer = document.getElementById(
-                    "aiSuggestionsContainer",
+                    "aiSuggestionsContainer"
                 );
 
                 const term = termInput.value.trim();
                 const definition = definitionInput.value.trim() || null;
+                const boundingContext = boundingContextInput.value.trim();
                 const synonyms = [
                     ...currentSynonyms,
                     synonymInput.value.trim(),
@@ -1072,6 +1118,7 @@ import "../styles/style.css";
                     aiSuggestions = await invoke("suggest_synonyms", {
                         term,
                         definition,
+                        boundingContext,
                         synonyms,
                         glossaryName,
                         glossaryDescription,
@@ -1081,7 +1128,7 @@ import "../styles/style.css";
                     if (aiSuggestions.length > 0) {
                         renderAISuggestions();
                         showSuccessMessage(
-                            `${aiSuggestions.length} suggestions found`,
+                            `${aiSuggestions.length} suggestions found`
                         );
                     } else {
                         showInfoMessage("No synonyms found for this word");
@@ -1092,7 +1139,7 @@ import "../styles/style.css";
                         "Error: " +
                             (error?.message ||
                                 error?.toString() ||
-                                "Failed to find suggestions"),
+                                "Failed to find suggestions")
                     );
                     aiSuggestions = [];
                 } finally {
@@ -1193,16 +1240,16 @@ import "../styles/style.css";
                     const exportData = getExportData();
                     generateMarkdown(
                         exportData.terms,
-                        ["Word", "Definition", "Synonyms"],
+                        ["Word", "Definition", "Bounding Context", "Synonyms"], // 4 colonnes
                         exportData.glossary.name,
-                        exportData.glossary.description,
+                        exportData.glossary.description
                     );
                     closeExportModal();
                     showSuccessMessage("Glossary exported as Markdown!");
                 } catch (error) {
                     console.error("Export error:", error);
                     showErrorMessage(
-                        "Error exporting glossary: " + error.message,
+                        "Error exporting glossary: " + error.message
                     );
                 }
             });
@@ -1214,16 +1261,16 @@ import "../styles/style.css";
                     const exportData = getExportData();
                     generateJSON(
                         exportData.terms,
-                        ["Word", "Definition", "Synonyms"],
+                        ["Word", "Definition", "Bounding Context", "Synonyms"], // 4 colonnes
                         exportData.glossary.name,
-                        exportData.glossary.description,
+                        exportData.glossary.description
                     );
                     closeExportModal();
                     showSuccessMessage("Glossary exported as JSON!");
                 } catch (error) {
                     console.error("Export error:", error);
                     showErrorMessage(
-                        "Error exporting glossary: " + error.message,
+                        "Error exporting glossary: " + error.message
                     );
                 }
             });
@@ -1233,6 +1280,20 @@ import "../styles/style.css";
             cancelBtn.addEventListener("click", closeModal);
             modalOverlay.addEventListener("click", closeModal);
             suggestBtn.addEventListener("click", fetchAISuggestions);
+
+            // Ajoutez ces écouteurs d'événements dans la section des écouteurs
+
+            document.getElementById("boundingContextInput").addEventListener("input", () => {
+                document.getElementById("boundingContextError").classList.add("hidden");
+                document.getElementById("boundingContextInput").classList.remove("border-red-500");
+            });
+
+            // Activation de l'autocomplétion lorsque le champ est cliqué
+            document.getElementById("boundingContextInput").addEventListener("focus", () => {
+                if (existingBoundingContexts.length > 0) {
+                    updateBoundingContextList();
+                }
+            });
 
             synonymInput.addEventListener("keypress", (e) => {
                 if (e.key === "Enter") {
@@ -1282,10 +1343,12 @@ import "../styles/style.css";
 
             submitBtn.addEventListener("click", () => {
                 const termInput = document.getElementById("termInput");
-                const definitionInput =
-                    document.getElementById("definitionInput");
+                const definitionInput = document.getElementById("definitionInput");
+                const boundingContextInput = document.getElementById("boundingContextInput");
+                
                 const term = termInput.value.trim();
                 const definition = definitionInput.value.trim();
+                const boundingContext = boundingContextInput.value.trim();
 
                 clearErrors();
                 let hasError = false;
@@ -1306,22 +1369,36 @@ import "../styles/style.css";
                     hasError = true;
                 }
 
+                if (!boundingContext) {
+                    document
+                        .getElementById("boundingContextError")
+                        .classList.remove("hidden");
+                    boundingContextInput.classList.add("border-red-500");
+                    hasError = true;
+                }
+
                 if (hasError) return;
 
                 // Vérifier une dernière fois les synonymes avant la soumission
                 checkAndRemoveMatchingSynonyms();
 
-                // Le reste du code reste inchangé...
+                // Enregistrer le bounding context pour l'autocomplétion future
+                if (!existingBoundingContexts.includes(boundingContext)) {
+                    existingBoundingContexts.push(boundingContext);
+                    updateBoundingContextList();
+                }
+
                 if (currentEditingId) {
                     // Mode édition - mettre à jour le terme existant
                     const termIndex = terms.findIndex(
-                        (t) => t.id === currentEditingId,
+                        (t) => t.id === currentEditingId
                     );
                     if (termIndex !== -1) {
                         terms[termIndex] = {
                             ...terms[termIndex],
                             term,
                             definition,
+                            boundingContext,
                             synonyms:
                                 currentSynonyms.length > 0
                                     ? [...currentSynonyms]
@@ -1338,6 +1415,7 @@ import "../styles/style.css";
                         id: nextId++,
                         term,
                         definition,
+                        boundingContext,
                         synonyms:
                             currentSynonyms.length > 0
                                 ? [...currentSynonyms]
@@ -1375,6 +1453,9 @@ import "../styles/style.css";
             document.getElementById("glossaryTitle").textContent =
                 currentGlossary.name;
             document.title = `GlossAI - ${currentGlossary.name}`;
+
+            // Extraire les contextes existants pour l'autocomplétion
+            extractExistingBoundingContexts();
             renderTable();
         </script>
     </body>

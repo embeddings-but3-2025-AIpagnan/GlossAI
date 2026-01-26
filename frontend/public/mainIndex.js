@@ -1,9 +1,8 @@
-import { GlossaryManager } from "../src/lib/glossaryManager.js";
-import { ModalManager } from "../src/lib/modalManager.js";
+import { GlossaryModalManager } from "../src/lib/Glossaries/glossaryModalManager.js";
 
 // Initialisations
-let modalManager = new ModalManager();
-let glossaryManager = modalManager.glossaryManager;
+let glossaryModalManager = new GlossaryModalManager();
+let glossaryManager = glossaryModalManager.glossaryManager;
 
 // Elements
 const newGlossaryModal = document.getElementById("newGlossaryModal");
@@ -40,32 +39,32 @@ const editGlossaryNameError = document.getElementById("editGlossaryNameError");
 const editGlossaryDescriptionError = document.getElementById("editGlossaryDescriptionError");
 
 // Évènements
-newGlossaryBtn.addEventListener("click", () => modalManager.open("newGlossaryModal"));
-cancelNewGlossaryBtn.addEventListener("click", () => modalManager.close("newGlossaryModal"));
-newGlossaryModalOverlay.addEventListener("click", () => modalManager.close("newGlossaryModal"));
+newGlossaryBtn.addEventListener("click", () => glossaryModalManager.open("newGlossaryModal"));
+cancelNewGlossaryBtn.addEventListener("click", () => glossaryModalManager.close("newGlossaryModal"));
+newGlossaryModalOverlay.addEventListener("click", () => glossaryModalManager.close("newGlossaryModal"));
 
-closeViewGlossaryBtn.addEventListener("click", () => modalManager.close("viewGlossaryModal"));
-viewGlossaryModalOverlay.addEventListener("click", () => modalManager.close("viewGlossaryModal"));
+closeViewGlossaryBtn.addEventListener("click", () => glossaryModalManager.close("viewGlossaryModal"));
+viewGlossaryModalOverlay.addEventListener("click", () => glossaryModalManager.close("viewGlossaryModal"));
 
-cancelEditGlossaryBtn.addEventListener("click", () => modalManager.close("editGlossaryModal"));
-editGlossaryModalOverlay.addEventListener("click", () => modalManager.close("editGlossaryModal"));
+cancelEditGlossaryBtn.addEventListener("click", () => glossaryModalManager.close("editGlossaryModal"));
+editGlossaryModalOverlay.addEventListener("click", () => glossaryModalManager.close("editGlossaryModal"));
 
 importGlossaryBtn.addEventListener("click", () => {
-    modalManager.open("importModal");
+    glossaryModalManager.open("importModal");
     importError.classList.add("hidden");
     importFileInput.value = "";
     document.getElementById("dropZoneContent").classList.remove("hidden");
     document.getElementById("filePreview").classList.add("hidden");
 });
 importCancelBtn.addEventListener("click", () => {
-    modalManager.close("importModal");
+    glossaryModalManager.close("importModal");
     importError.classList.add("hidden");
     importFileInput.value = "";
     document.getElementById("dropZoneContent").classList.add("hidden");
     document.getElementById("filePreview").classList.add("hidden");
 });
 importModalOverlay.addEventListener("click", () => {
-    modalManager.close("importModal");
+    glossaryModalManager.close("importModal");
     importError.classList.add("hidden");
     importFileInput.value = "";
     document.getElementById("dropZoneContent").classList.add("hidden");
@@ -83,43 +82,43 @@ importFileInput.addEventListener("change", () => {
 });
 
 glossaryNameInput.addEventListener("input", () => {
-    modalManager.clearError("glossaryNameInput", "glossaryNameError");
+    glossaryModalManager.clearError("glossaryNameInput", "glossaryNameError");
 });
 
 glossaryDescriptionInput.addEventListener("input", () => {
-    modalManager.clearError("glossaryDescriptionInput", "glossaryDescriptionError");
+    glossaryModalManager.clearError("glossaryDescriptionInput", "glossaryDescriptionError");
 });
 
 editGlossaryNameInput.addEventListener("input", () => {
-    modalManager.clearError("editGlossaryNameError", "editGlossaryNameError");
+    glossaryModalManager.clearError("editGlossaryNameError", "editGlossaryNameError");
 });
 
 editGlossaryDescriptionInput.addEventListener("input", () => {
-    modalManager.clearError("editGlossaryDescriptionInput", "editGlossaryDescriptionError");
+    glossaryModalManager.clearError("editGlossaryDescriptionInput", "editGlossaryDescriptionError");
 });
 
 submitNewGlossaryBtn.addEventListener("click", () => {
     const name = glossaryNameInput.value.trim();
     const description = glossaryDescriptionInput.value.trim();
 
-    modalManager.clearError("glossaryNameInput", "glossaryNameError");
-    modalManager.clearError("glossaryDescriptionInput", "glossaryDescriptionError");
+    glossaryModalManager.clearError("glossaryNameInput", "glossaryNameError");
+    glossaryModalManager.clearError("glossaryDescriptionInput", "glossaryDescriptionError");
     let hasError = false;
 
     if (!name) {
-        modalManager.showError("glossaryNameInput", "glossaryNameError");
+        glossaryModalManager.showError("glossaryNameInput", "glossaryNameError");
         hasError = true;
     }
 
     if (!description) {
-        modalManager.showError("glossaryDescriptionInput", "glossaryDescriptionError");
+        glossaryModalManager.showError("glossaryDescriptionInput", "glossaryDescriptionError");
         hasError = true;
     }
 
     if (hasError) return;
 
-    const newGlossary = glossaryManager.create(name, description);
-    modalManager.close("newGlossaryModal");
+    const newGlossary = glossaryManager.createGlossary(name, description);
+    glossaryModalManager.close("newGlossaryModal");
 
     glossaryManager.redirectTo(newGlossary.id);
 });
@@ -128,26 +127,26 @@ submitEditGlossaryBtn.addEventListener("click", () => {
     const name = editGlossaryNameInput.value.trim();
     const description = editGlossaryDescriptionInput.value.trim();
 
-    modalManager.clearError("editGlossaryNameInput", "editGlossaryNameError");
-    modalManager.clearError("editGlossaryDescriptionInput", "editGlossaryDescriptionError");
+    glossaryModalManager.clearError("editGlossaryNameInput", "editGlossaryNameError");
+    glossaryModalManager.clearError("editGlossaryDescriptionInput", "editGlossaryDescriptionError");
     let hasError = false;
 
     if (!name) {
-        modalManager.showError("editGlossaryNameInput", "editGlossaryNameError");
+        glossaryModalManager.showError("editGlossaryNameInput", "editGlossaryNameError");
         hasError = true;
     }
 
     if (!description) {
-        modalManager.showError("editGlossaryDescriptionInput", "editGlossaryDescriptionError");
+        glossaryModalManager.showError("editGlossaryDescriptionInput", "editGlossaryDescriptionError");
         hasError = true;
     }
 
     if (hasError) return;
 
     if (glossaryManager.currentEditId !== -1) {
-        glossaryManager.update(glossaryManager.currentEditId, name, description);
-        modalManager.close("editGlossaryModal");
-        modalManager.render();
+        glossaryManager.updateGlossary(glossaryManager.currentEditId, name, description);
+        glossaryModalManager.close("editGlossaryModal");
+        glossaryModalManager.render();
     }
 });
 
@@ -197,9 +196,9 @@ importConfirmBtn.addEventListener("click", async () => {
                     })),
                 };
 
-                glossaryManager.create(newGlossary.name, newGlossary.description, newGlossary.terms);
-                modalManager.render();
-                modalManager.close("importModal");
+                glossaryManager.createGlossary(newGlossary.name, newGlossary.description, newGlossary.terms);
+                glossaryModalManager.render();
+                glossaryModalManager.close("importModal");
 
             } else {
                 const { parseJSON } = await import(
@@ -223,9 +222,9 @@ importConfirmBtn.addEventListener("click", async () => {
                     })),
                 };
 
-                glossaryManager.create(newGlossary.name, newGlossary.description, newGlossary.terms);
-                modalManager.render();
-                modalManager.close("importModal");
+                glossaryManager.createGlossary(newGlossary.name, newGlossary.description, newGlossary.terms);
+                glossaryModalManager.render();
+                glossaryModalManager.close("importModal");
             }
         };
         reader.readAsText(file);
@@ -239,19 +238,19 @@ importConfirmBtn.addEventListener("click", async () => {
 document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
         if (!newGlossaryModal.classList.contains("hidden")) {
-            modalManager.close("newGlossaryModal");
+            glossaryModalManager.close("newGlossaryModal");
         }
         if (!viewGlossaryModal.classList.contains("hidden")) {
-            modalManager.close("viewGlossaryModal");
+            glossaryModalManager.close("viewGlossaryModal");
         }
         if (!editGlossaryModal.classList.contains("hidden")) {
-            modalManager.close("editGlossaryModal");
+            glossaryModalManager.close("editGlossaryModal");
         }
         if (!importModal.classList.contains("hidden")) {
-            modalManager.close("importModal");
+            glossaryModalManager.close("importModal");
         }
     }
 });
 //Execution
 glossaryManager.load();
-modalManager.render();
+glossaryModalManager.render();
