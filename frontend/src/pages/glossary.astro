@@ -396,6 +396,8 @@ import "../styles/style.css";
         </div>
 
         <script>
+            import { escapeHtml } from "../lib/utils.js";
+
             // ===== VARIABLES GLOBALES =====
             const urlParams = new URLSearchParams(window.location.search);
             const glossaryId = parseInt(urlParams.get("id"));
@@ -513,21 +515,21 @@ import "../styles/style.css";
                         (term) => `
                     <tr class="hover:bg-gray-50 transition-colors">
                         <td class="px-6 py-4 font-medium text-gray-900">
-                            ${shorten(term.term)}
+                            ${escapeHtml(shorten(term.term))}
                         </td>
                         <td class="px-6 py-4 text-gray-700">
                             <div 
                                 class="definition-cell cursor-help relative group"
-                                data-definition="${term.definition.replace(/"/g, "&quot;")}"
+                                data-definition="${escapeHtml(term.definition)}"
                             >
-                                ${shorten(term.definition)}
+                                ${escapeHtml(shorten(term.definition))}
                             </div>
                         </td>
                         <td class="px-6 py-4 text-gray-700">
-                            ${term.boundingContext ? shorten(term.boundingContext) : "-"}
+                            ${escapeHtml(term.boundingContext ? shorten(term.boundingContext) : "-")}
                         </td>
                         <td class="px-6 py-4 text-gray-700">
-                            ${Array.isArray(term.synonyms) ? term.synonyms.join(", ") : term.synonyms}
+                            ${escapeHtml(Array.isArray(term.synonyms) ? term.synonyms.join(", ") : term.synonyms)}
                         </td>
                         <td class="px-6 py-4">
                             <button 
@@ -584,7 +586,7 @@ import "../styles/style.css";
                         <div class="absolute -bottom-1 left-1/2 transform -translate-x-1/2">
                             <div class="w-2 h-2 bg-gray-900 rotate-45"></div>
                         </div>
-                        <div class="break-words whitespace-normal">${definition}</div>
+                        <div class="break-words whitespace-normal">${escapeHtml(definition)}</div>
                     </div>
                 `;
 
@@ -637,7 +639,7 @@ import "../styles/style.css";
                     .map(
                         (syn, index) => `
             <span class="inline-flex items-center gap-2 px-3 py-1 bg-gray-200 text-gray-800 rounded-md text-sm">
-                ${syn}
+                ${escapeHtml(syn)}
                 <button type="button" class="remove-synonym text-gray-600 hover:text-gray-900 font-bold" data-index="${index}">×</button>
             </span>
         `,
@@ -1037,9 +1039,9 @@ import "../styles/style.css";
             <button 
                 type="button" 
                 class="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-md text-sm hover:bg-blue-200 transition-colors ai-suggestion-btn"
-                data-synonym="${synonym.replace(/"/g, "&quot;")}"
+                data-synonym="${escapeHtml(synonym)}"
             >
-                ${synonym}
+                ${escapeHtml(synonym)}
                 <span class="text-blue-600 text-xs">+</span>
             </button>
         `,
@@ -1179,7 +1181,7 @@ import "../styles/style.css";
                 toast.innerHTML = `
             <div class="flex items-center gap-3">
                 <div class="flex-1">
-                    <p class="font-medium">${message}</p>
+                    <p class="font-medium">${escapeHtml(message)}</p>
                 </div>
                 <button type="button" class="close-toast text-gray-500 hover:text-gray-700">
                     ×

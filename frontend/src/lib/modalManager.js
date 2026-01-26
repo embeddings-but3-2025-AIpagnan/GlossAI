@@ -1,5 +1,6 @@
 import { GlossaryManager } from "./Glossaries/glossaryManager";
 import { DeleteUtils } from "./deleteUtils.js";
+import { escapeHtml } from "./utils.js";
 
 export class ModalManager {
     glossaryManager = new GlossaryManager();
@@ -69,10 +70,10 @@ export class ModalManager {
                     <div class="flex justify-between items-start">
                         <div class="flex-1">
                             <h3 class="text-xl font-semibold text-gray-900 mb-2">
-                                ${shorten(glossary.name)}
+                                ${escapeHtml(shorten(glossary.name))}
                             </h3>
                             <p class="text-gray-600 text-sm">
-                                ${shorten(glossary.description)}
+                                ${escapeHtml(shorten(glossary.description))}
                             </p>
                         </div>
                         <div class="flex gap-2 ml-4" onclick="event.stopPropagation()">
@@ -113,10 +114,10 @@ export class ModalManager {
             document.getElementById("viewGlossaryBtn" + glossary.id).addEventListener("click", () => this.view(glossary.id));
             document.getElementById("editGlossaryBtn" + glossary.id).addEventListener("click", () => this.edit(glossary.id));
             document.getElementById("deleteGlossaryBtn" + glossary.id).addEventListener("click", () => this.deleteUtils.deleteGlossary(glossary.id, (updatedGlossaries) => {
-                    this.glossaryManager.glossaries = updatedGlossaries;
-                    this.glossaryManager.save();
-                    this.render();
-                })
+                this.glossaryManager.glossaries = updatedGlossaries;
+                this.glossaryManager.save();
+                this.render();
+            })
             );
             document.getElementById("glossaryContainer" + glossary.id).addEventListener("click", () => this.glossaryManager.redirectTo(glossary.id));
         });
