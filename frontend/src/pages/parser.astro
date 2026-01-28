@@ -53,13 +53,13 @@ import "../styles/style.css";
             <div class="max-w-7xl mx-auto">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-3xl font-semibold text-gray-900">
-                        Java Code Parser
+                        Code Parser
                     </h2>
                 </div>
 
                 <div class="mb-8">
                     <p class="text-gray-600">
-                        Analyze Java files to extract class names, methods,
+                        Analyze files to extract class names, methods,
                         variables, and other identifiers.
                     </p>
                 </div>
@@ -94,7 +94,7 @@ import "../styles/style.css";
                                 >Analyze Single File</span
                             >
                             <span class="text-sm text-gray-500 mt-1"
-                                >.java files only</span
+                                >.java and .py files only</span
                             >
                         </button>
 
@@ -119,7 +119,7 @@ import "../styles/style.css";
                                 >Analyze Folder</span
                             >
                             <span class="text-sm text-gray-500 mt-1"
-                                >Recursive .java file analysis</span
+                                >Recursive file analysis</span
                             >
                         </button>
                     </div>
@@ -345,8 +345,8 @@ import "../styles/style.css";
                     const selected = await open({
                         filters: [
                             {
-                                name: "Java",
-                                extensions: ["java"],
+                                name: "Fichiers de code",
+                                extensions: ["java", "py"],
                             },
                         ],
                     });
