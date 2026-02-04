@@ -105,3 +105,32 @@
 .text-blue-700 {
     color: var(--color-blue-600);
 }
+
+.sort-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+    padding: 0;
+}
+
+.sort-btn:hover {
+    color: #3b82f6;
+}
+
+.sort-indicator {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.sort-indicator .active {
+    opacity: 1;
+}
+
+.sort-indicator svg:last-child {
+    transform: rotate(180deg);
+    margin-top: -4px;
+}

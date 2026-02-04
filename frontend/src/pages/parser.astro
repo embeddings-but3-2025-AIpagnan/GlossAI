@@ -196,18 +196,36 @@ import "../styles/style.css";
                                     <table class="w-full">
                                         <thead class="bg-gray-50">
                                             <tr>
-                                                <th
-                                                    class="px-6 py-3 text-left text-sm font-semibold text-gray-900"
-                                                    >Identifier</th
-                                                >
-                                                <th
-                                                    class="px-6 py-3 text-left text-sm font-semibold text-gray-900"
-                                                    >Occurrences</th
-                                                >
-                                                <th
-                                                    class="px-6 py-3 text-left text-sm font-semibold text-gray-900"
-                                                    >Status</th
-                                                >
+                                                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                                                    <button class="sort-btn flex items-center gap-1" data-sort="identifier" data-direction="asc">
+                                                        Identifier
+                                                        <span class="sort-indicator">
+                                                            <svg class="w-4 h-4 opacity-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                                            </svg>
+                                                        </span>
+                                                    </button>
+                                                </th>
+                                                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                                                    <button class="sort-btn flex items-center gap-1" data-sort="occurrences" data-direction="asc">
+                                                        Occurrences
+                                                        <span class="sort-indicator">
+                                                            <svg class="w-4 h-4 opacity-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                                            </svg>
+                                                        </span>
+                                                    </button>
+                                                </th>
+                                                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                                                    <button class="sort-btn flex items-center gap-1" data-sort="status" data-direction="asc">
+                                                        Status
+                                                        <span class="sort-indicator">
+                                                            <svg class="w-4 h-4 opacity-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                                            </svg>
+                                                        </span>
+                                                    </button>
+                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody
@@ -280,6 +298,8 @@ import "../styles/style.css";
             let isFile = true;
             let analysisResults = null;
             let currentGlossary = null;
+            let currentSort = { column: 'occurrences', direction: 'desc' };
+            let identifiersData = [];
 
             // ===== ÉLÉMENTS DU DOM =====
             const backBtn = document.getElementById("backBtn");
@@ -384,7 +404,6 @@ import "../styles/style.css";
 
             function updateSelectionDisplay() {
                 if (selectedPath) {
-                    // Ajouter la classe de police en gras
                     selectedPathElement.innerHTML = `<strong>${selectedPath}</strong>`;
                     selectedPathContainer.classList.remove("hidden");
                     analyzeBtn.disabled = false;
@@ -437,7 +456,6 @@ import "../styles/style.css";
             async function analyze() {
                 if (!selectedPath) return;
 
-                // Charger le glossaire avant l'analyse
                 loadGlossary();
 
                 clearError();
@@ -471,24 +489,17 @@ import "../styles/style.css";
             function displayResults() {
                 if (!analysisResults) return;
 
-                // Mettre à jour les statistiques
                 updateSummaryStats();
-
-                // Afficher tous les identifiants
                 displayAllIdentifiers();
-
-                // Afficher le conteneur de résultats
                 resultsContainer.classList.remove("hidden");
             }
 
             function updateSummaryStats() {
                 if (isFile) {
-                    // Pour un fichier
                     const total = Object.values(analysisResults.names).reduce(
                         (a, b) => a + b,
                         0,
                     );
-                    const unique = Object.keys(analysisResults.names).length;
                     const fileName = selectedPath ? selectedPath.split("/").pop() : "File";
 
                     summaryStats.innerHTML = `
@@ -506,13 +517,9 @@ import "../styles/style.css";
                         </div>
                     `;
                 } else {
-                    // Pour un dossier
                     const totalOccurrences = Object.values(
                         analysisResults.names,
                     ).reduce((a, b) => a + b, 0);
-                    const uniqueIdentifiers = Object.keys(
-                        analysisResults.names,
-                    ).length;
                     const fileCount = Object.keys(analysisResults.files).length;
                     const folderName = selectedPath ? selectedPath.split("/").pop() : "Folder";
 
@@ -533,57 +540,124 @@ import "../styles/style.css";
                 }
             }
 
+            // ===== GESTION DU TRI =====
             function displayAllIdentifiers() {
-                const names = isFile
-                    ? analysisResults.names
-                    : analysisResults.names;
-                const sortedNames = Object.entries(names).sort(
-                    (a, b) => b[1] - a[1],
-                );
+                const names = isFile ? analysisResults.names : analysisResults.names;
+                
+                identifiersData = Object.entries(names).map(([name, count]) => ({
+                    name,
+                    count,
+                    inGlossary: isTermInGlossary(name)
+                }));
+                
+                // Réinitialiser le tri par défaut
+                currentSort = { column: 'occurrences', direction: 'desc' };
+                updateSortIndicators();
+                renderTable();
+            }
 
-                identifiersTable.innerHTML = sortedNames
-                    .map(
-                        ([name, count]) => {
-                            const inGlossary = isTermInGlossary(name);
-                            
-                            return `
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4">
-                            <span class="font-mono text-sm bg-gray-100 px-2 py-1 rounded">${name}</span>
-                        </td>
-                        <td class="px-6 py-4">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${count > 5 ? "bg-red-100 text-red-800" : count > 2 ? "bg-yellow-100 text-yellow-800" : "bg-green-100 text-green-800"}">
-                                ${count} occurrence${count > 1 ? "s" : ""}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4">
-                            ${inGlossary ? 
-                                `<span class="text-green-600 text-sm font-medium flex items-center gap-1">
-                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                                    </svg>
-                                    Already in glossary
-                                </span>` : 
-                                glossaryId ? 
-                                `<button class="text-blue-600 hover:text-blue-900 text-sm font-medium add-identifier" data-identifier="${name}">
-                                    Add to Glossary
-                                </button>` :
-                                `<span class="text-gray-500 text-sm">Select a glossary to add</span>`
+            function renderTable() {
+                if (!identifiersData || identifiersData.length === 0) return;
+                
+                const { column, direction } = currentSort;
+                
+                // Trier les données
+                const sortedData = [...identifiersData].sort((a, b) => {
+                    let comparison = 0;
+                    
+                    switch (column) {
+                        case 'identifier':
+                            comparison = a.name.localeCompare(b.name);
+                            break;
+                        case 'occurrences':
+                            comparison = a.count - b.count;
+                            break;
+                        case 'status':
+                            if (a.inGlossary !== b.inGlossary) {
+                                comparison = a.inGlossary ? -1 : 1;
+                            } else {
+                                comparison = a.name.localeCompare(b.name);
                             }
-                        </td>
-                    </tr>
-                `;
-                        }
-                    )
+                            break;
+                    }
+                    
+                    return direction === 'asc' ? comparison : -comparison;
+                });
+                
+                identifiersTable.innerHTML = sortedData
+                    .map(({ name, count, inGlossary }) => {
+                        return `
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4">
+                                    <span class="font-mono text-sm bg-gray-100 px-2 py-1 rounded">${name}</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${count > 5 ? "bg-red-100 text-red-800" : count > 2 ? "bg-yellow-100 text-yellow-800" : "bg-green-100 text-green-800"}">
+                                        ${count} occurrence${count > 1 ? "s" : ""}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    ${inGlossary ? 
+                                        `<span class="text-green-600 text-sm font-medium flex items-center gap-1">
+                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                            </svg>
+                                            Already in glossary
+                                        </span>` : 
+                                        glossaryId ? 
+                                        `<button class="text-blue-600 hover:text-blue-900 text-sm font-medium add-identifier" data-identifier="${name}">
+                                            Add to Glossary
+                                        </button>` :
+                                        `<span class="text-gray-500 text-sm">Select a glossary to add</span>`
+                                    }
+                                </td>
+                            </tr>
+                        `;
+                    })
                     .join("");
-
-                // Ajouter les écouteurs d'événements seulement pour les boutons d'ajout
+                
+                // Réattacher les écouteurs d'événements pour les boutons d'ajout
                 document.querySelectorAll(".add-identifier").forEach((btn) => {
                     btn.addEventListener("click", function () {
                         const identifier = this.getAttribute("data-identifier");
                         addIdentifierToGlossary(identifier);
                     });
                 });
+            }
+
+            function updateSortIndicators() {
+                document.querySelectorAll('.sort-btn').forEach(btn => {
+                    const indicator = btn.querySelector('.sort-indicator svg');
+                    const column = btn.getAttribute('data-sort');
+                    
+                    if (column === currentSort.column) {
+                        indicator.classList.remove('opacity-0');
+                        indicator.classList.add('opacity-100', 'transition-transform', 'duration-200');
+                        // Mettre à jour la direction de la flèche
+                        if (currentSort.direction === 'asc') {
+                            indicator.style.transform = 'rotate(0deg)';
+                        } else {
+                            indicator.style.transform = 'rotate(180deg)';
+                        }
+                    } else {
+                        indicator.classList.remove('opacity-100', 'transition-transform');
+                        indicator.classList.add('opacity-0');
+                        indicator.style.transform = 'rotate(0deg)';
+                    }
+                });
+            }
+
+            function handleSort(column) {
+                if (currentSort.column === column) {
+                    // Inverser la direction si on clique sur la même colonne
+                    currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+                } else {
+                    // Nouvelle colonne, direction ascendante par défaut
+                    currentSort = { column, direction: 'asc' };
+                }
+                
+                updateSortIndicators();
+                renderTable();
             }
 
             // ===== AJOUT AU GLOSSAIRE =====
@@ -596,7 +670,6 @@ import "../styles/style.css";
                 }
 
                 try {
-                    // Charger les glossaires
                     const glossaries =
                         JSON.parse(localStorage.getItem("glossaries")) || [];
                     const glossaryIndex = glossaries.findIndex(
@@ -608,7 +681,6 @@ import "../styles/style.css";
                         return;
                     }
 
-                    // Vérifier si le terme n'existe pas déjà
                     const glossary = glossaries[glossaryIndex];
                     const termExists = glossary.terms.some(
                         t => t.term.toLowerCase() === identifier.toLowerCase()
@@ -616,12 +688,11 @@ import "../styles/style.css";
 
                     if (termExists) {
                         showMessage(`"${identifier}" is already in the glossary.`, "info");
-                        // Recharger l'affichage pour mettre à jour les statuts
+                        // Mettre à jour l'affichage
                         displayAllIdentifiers();
                         return;
                     }
 
-                    // Ajouter le terme au glossaire
                     const nextId =
                         Math.max(...glossary.terms.map((t) => t.id), 0) + 1;
 
@@ -632,22 +703,19 @@ import "../styles/style.css";
                         synonyms: [],
                     });
 
-                    // Sauvegarder
                     localStorage.setItem(
                         "glossaries",
                         JSON.stringify(glossaries),
                     );
 
-                    // Recharger le glossaire courant
                     loadGlossary();
 
-                    // Afficher un message de succès
                     showMessage(
                         `"${identifier}" added to glossary!`,
                         "success",
                     );
 
-                    // Recharger l'affichage pour mettre à jour les statuts
+                    // Mettre à jour l'affichage
                     displayAllIdentifiers();
                 } catch (error) {
                     showError(
@@ -658,14 +726,13 @@ import "../styles/style.css";
 
             // ===== GESTION DES MESSAGES =====
             function showMessage(message, type = "success") {
-                // Créer un toast
                 const toast = document.createElement("div");
                 toast.className = `fixed top-4 right-4 border rounded-lg shadow-lg p-4 z-50 transition-opacity duration-300 ${
                     type === "success"
                         ? "bg-green-100 border-green-400 text-green-700"
                         : type === "error"
-                          ? "bg-red-100 border-red-400 text-red-700"
-                          : "bg-blue-100 border-blue-400 text-blue-700"
+                        ? "bg-red-100 border-red-400 text-red-700"
+                        : "bg-blue-100 border-blue-400 text-blue-700"
                 }`;
 
                 toast.innerHTML = `
@@ -699,6 +766,16 @@ import "../styles/style.css";
             selectFolderBtn.addEventListener("click", selectFolder);
             clearSelectionBtn.addEventListener("click", clearSelection);
             analyzeBtn.addEventListener("click", analyze);
+
+            // Écouteurs pour les boutons de tri
+            document.addEventListener('click', (event) => {
+                const sortBtn = event.target.closest('.sort-btn');
+                if (sortBtn) {
+                    event.preventDefault();
+                    const column = sortBtn.getAttribute('data-sort');
+                    handleSort(column);
+                }
+            });
 
             // ===== INITIALISATION =====
             updateBackButton();
