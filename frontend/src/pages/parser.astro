@@ -586,17 +586,27 @@ import "../styles/style.css";
                 
                 identifiersTable.innerHTML = sortedData
                     .map(({ name, count, inGlossary }) => {
+                        // Déterminer la couleur de la ligne en fonction du nombre d'occurrences
+                        let rowColorClass;
+                        if (count > 5) {
+                            rowColorClass = 'bg-red-50 hover:bg-red-100';
+                        } else if (count > 2) {
+                            rowColorClass = 'bg-yellow-50 hover:bg-yellow-100';
+                        } else {
+                            rowColorClass = 'bg-green-50 hover:bg-green-100';
+                        }
+                        
                         return `
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-4">
-                                    <span class="font-mono text-sm bg-gray-100 px-2 py-1 rounded">${name}</span>
+                            <tr class="${rowColorClass}">
+                                <td class="px-6 py-4 font-bold">
+                                    <span class="font-mono text-sm bg-white px-2 py-1 rounded border">${name}</span>
                                 </td>
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${count > 5 ? "bg-red-100 text-red-800" : count > 2 ? "bg-yellow-100 text-yellow-800" : "bg-green-100 text-green-800"}">
+                                <td class="px-6 py-4 font-bold">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm">
                                         ${count} occurrence${count > 1 ? "s" : ""}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4">
+                                <td class="px-6 py-4 font-bold">
                                     ${inGlossary ? 
                                         `<span class="text-green-600 text-sm font-medium flex items-center gap-1">
                                             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
