@@ -172,11 +172,34 @@ def analyze_directory(path: Path) -> DirectoryResults:
 
 
 def main() -> None:
-    print(
-        analyze_directory(
-            Path("/home/zacharie/Downloads/Tennis-Refactoring-Kata-main/python"),
-        ),
+    results = analyze_directory(
+        Path("/home/zacharie/Downloads/Tennis-Refactoring-Kata-main/python"),
     )
+    
+    print("=" * 80)
+    print("STATISTIQUES PAR FICHIER")
+    print("=" * 80)
+    
+    for file_path, file_results in results.files.items():
+        print(f"\n📄 Fichier: {file_path}")
+        print(f"   Langage: {file_results.lang}")
+        print(f"   Nombre total de noms: {sum(file_results.words.values())}")
+        print(f"   Noms uniques: {len(file_results.words)}")
+        
+        if file_results.words:
+            print(f"   Top 10 des noms les plus fréquents:")
+            for name, count in file_results.words.most_common(10):
+                print(f"      - {name}: {count}")
+    
+    print("\n" + "=" * 80)
+    print("STATISTIQUES GLOBALES DU RÉPERTOIRE")
+    print("=" * 80)
+    print(f"Nombre total de fichiers analysés: {len(results.files)}")
+    print(f"Nombre total de noms: {sum(results.words.values())}")
+    print(f"Noms uniques dans tout le répertoire: {len(results.words)}")
+    print(f"\nTop 20 des noms les plus fréquents (tous fichiers confondus):")
+    for name, count in results.words.most_common(20):
+        print(f"   - {name}: {count}")
 
 
 if __name__ == "__main__":
