@@ -697,18 +697,14 @@ import "../styles/style.css";
             // ===== FONCTIONS D'EXPORT =====
             function getExportData() {
                 return {
-                    glossary: {
-                        name: currentGlossary.name,
-                        description: currentGlossary.description,
-                        createdAt: new Date().toISOString(),
-                        termCount: terms.length,
-                    },
-                    terms: terms.map((term) => [
-                        term.term,
-                        term.definition,
-                        term.boundingContext || "", // Ajout du bounding context
-                        Array.isArray(term.synonyms) ? term.synonyms : [],
-                    ]),
+                    name: currentGlossary.name,
+                    description: currentGlossary.description,
+                    terms: terms.map(term => ({
+                        term: term.term,
+                        definition: term.definition,
+                        bounding_context: term.boundingContext,
+                        synonyms: Array.isArray(term.synonyms) ? term.synonyms : []
+                    })),
                 };
             }
 
@@ -720,19 +716,9 @@ import "../styles/style.css";
                     let previewContent = "";
 
                     if (format === "markdown") {
-                        previewContent = generateMarkdownString(
-                            exportData.terms,
-                            ["Word", "Definition", "Synonyms"],
-                            exportData.glossary.name,
-                            exportData.glossary.description,
-                        );
+                        previewContent = await generateMarkdownString(exportData);
                     } else if (format === "json") {
-                        previewContent = generateJSONString(
-                            exportData.terms,
-                            ["Word", "Definition", "Synonyms"],
-                            exportData.glossary.name,
-                            exportData.glossary.description,
-                        );
+                        previewContent = await generateJSONString(exportData);
                     }
 
                     exportPreview.textContent = previewContent;
@@ -1240,12 +1226,7 @@ import "../styles/style.css";
                     const { generateMarkdown } =
                         await import("../lib/exportDocuments.js");
                     const exportData = getExportData();
-                    generateMarkdown(
-                        exportData.terms,
-                        ["Word", "Definition", "Bounding Context", "Synonyms"], // 4 colonnes
-                        exportData.glossary.name,
-                        exportData.glossary.description
-                    );
+                    await generateMarkdown(exportData);
                     closeExportModal();
                     showSuccessMessage("Glossary exported as Markdown!");
                 } catch (error) {
@@ -1261,12 +1242,7 @@ import "../styles/style.css";
                     const { generateJSON } =
                         await import("../lib/exportDocuments.js");
                     const exportData = getExportData();
-                    generateJSON(
-                        exportData.terms,
-                        ["Word", "Definition", "Bounding Context", "Synonyms"], // 4 colonnes
-                        exportData.glossary.name,
-                        exportData.glossary.description
-                    );
+                    await generateJSON(exportData);
                     closeExportModal();
                     showSuccessMessage("Glossary exported as JSON!");
                 } catch (error) {
