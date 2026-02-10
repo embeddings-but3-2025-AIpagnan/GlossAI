@@ -185,8 +185,8 @@ import "../styles/style.css";
 
                         <!-- Results Content with Sidebar Layout -->
                         <div class="flex flex-col lg:flex-row gap-6 justify-center">
-                            <!-- Left Column - Table (Centered when chart is hidden) -->
-                            <div id="tableColumn" class="w-full transition-all duration-300">
+                            <!-- Left Column - Table -->
+                            <div id="tableColumn" class="w-full lg:w-2/3 transition-all duration-300">
                                 <!-- All Identifiers View -->
                                 <div id="allIdentifiersView">
                                     <div class="overflow-x-auto">
@@ -243,8 +243,8 @@ import "../styles/style.css";
                                 </div>
                             </div>
 
-                            <!-- Right Column - Chart (Hidden by default) -->
-                            <div id="chartColumn" class="hidden lg:w-96">
+                            <!-- Right Column - Metrics and Chart (Visible by default) -->
+                            <div id="chartColumn" class="lg:w-96">
                                 <!-- UL Coverage Metric Card -->
                                 <div id="ulCoverageCard" class="bg-white rounded-lg border border-gray-200 p-6 mb-4 shadow-sm">
                                     <div class="flex items-center justify-between mb-2">
@@ -259,7 +259,7 @@ import "../styles/style.css";
                                     </div>
                                     <div class="mt-3">
                                         <div class="flex justify-between text-xs text-gray-600 mb-1">
-                                            <span id="ulCoverageStats">0 / 0 terms</span>
+                                            <span id="ulCoverageStats">0 out of 0 terms</span>
                                         </div>
                                         <div class="w-full bg-gray-200 rounded-full h-2">
                                             <div id="ulCoverageBar" class="bg-blue-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
@@ -267,19 +267,34 @@ import "../styles/style.css";
                                     </div>
                                 </div>
 
+                                <!-- UL Alignment Metric Card -->
+                                <div id="ulAlignmentCard" class="bg-white rounded-lg border border-gray-200 p-6 mb-4 shadow-sm">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <h4 class="text-sm font-medium text-gray-600">UL Alignment</h4>
+                                        <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="flex items-baseline gap-2">
+                                        <span id="ulAlignmentValue" class="text-3xl font-bold text-gray-900">0%</span>
+                                        <span class="text-sm text-gray-500">alignment score</span>
+                                    </div>
+                                    <div class="mt-3">
+                                        <div class="flex justify-between text-xs text-gray-600 mb-1">
+                                            <span id="ulAlignmentStats">0 out of 0 total occurrences</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-2">
+                                            <div id="ulAlignmentBar" class="bg-purple-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <!-- Chart Card -->
                                 <div class="bg-gray-50 rounded-lg border border-gray-200 p-6 h-full">
                                     <!-- Chart Header -->
-                                    <div class="flex justify-between items-center mb-6">
-                                        <div>
-                                            <h4 class="text-lg font-semibold text-gray-900">Term Distribution</h4>
-                                            <p id="selectedTermName" class="text-sm text-gray-600 mt-1"></p>
-                                        </div>
-                                        <button id="closeChartBtn" class="text-gray-400 hover:text-gray-600">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                            </svg>
-                                        </button>
+                                    <div class="mb-6">
+                                        <h4 class="text-lg font-semibold text-gray-900">Term Distribution</h4>
+                                        <p id="selectedTermName" class="text-sm text-gray-600 mt-1"></p>
                                     </div>
 
                                     <!-- Chart Container -->
@@ -531,13 +546,60 @@ import "../styles/style.css";
                 document.getElementById('ulCoverageValue').textContent = `${percentage}%`;
                 
                 // Mettre à jour les stats
-                document.getElementById('ulCoverageStats').textContent = `${inGlossary} / ${total} terms`;
+                document.getElementById('ulCoverageStats').textContent = `${inGlossary} out of ${total} terms`;
                 
                 // Mettre à jour la barre de progression
                 document.getElementById('ulCoverageBar').style.width = `${percentage}%`;
                 
                 // Changer la couleur de la barre en fonction du pourcentage
                 const bar = document.getElementById('ulCoverageBar');
+                if (percentage >= 75) {
+                    bar.className = 'bg-green-500 h-2 rounded-full transition-all duration-500';
+                } else if (percentage >= 50) {
+                    bar.className = 'bg-yellow-500 h-2 rounded-full transition-all duration-500';
+                } else if (percentage >= 25) {
+                    bar.className = 'bg-orange-500 h-2 rounded-full transition-all duration-500';
+                } else {
+                    bar.className = 'bg-red-500 h-2 rounded-full transition-all duration-500';
+                }
+            }
+
+            // ===== CALCUL DU UL ALIGNMENT =====
+            function calculateULAlignment() {
+                if (!analysisResults || !analysisResults.names) return { percentage: 0, ulOccurrences: 0, totalOccurrences: 0 };
+                
+                let ulOccurrences = 0;
+                let totalOccurrences = 0;
+                
+                // Parcourir tous les termes et leurs occurrences
+                for (const [term, count] of Object.entries(analysisResults.names)) {
+                    totalOccurrences += count;
+                    
+                    // Si le terme est dans le glossaire, ajouter ses occurrences au compte UL
+                    if (isTermInGlossary(term)) {
+                        ulOccurrences += count;
+                    }
+                }
+                
+                const percentage = totalOccurrences > 0 ? ((ulOccurrences / totalOccurrences) * 100).toFixed(1) : 0;
+                
+                return { percentage, ulOccurrences, totalOccurrences };
+            }
+
+            function updateULAlignment() {
+                const { percentage, ulOccurrences, totalOccurrences } = calculateULAlignment();
+                
+                // Mettre à jour le pourcentage
+                document.getElementById('ulAlignmentValue').textContent = `${percentage}%`;
+                
+                // Mettre à jour les stats
+                document.getElementById('ulAlignmentStats').textContent = `${ulOccurrences} out of ${totalOccurrences} total occurrences`;
+                
+                // Mettre à jour la barre de progression
+                document.getElementById('ulAlignmentBar').style.width = `${percentage}%`;
+                
+                // Changer la couleur de la barre en fonction du pourcentage
+                const bar = document.getElementById('ulAlignmentBar');
                 if (percentage >= 75) {
                     bar.className = 'bg-green-500 h-2 rounded-full transition-all duration-500';
                 } else if (percentage >= 50) {
@@ -589,6 +651,7 @@ import "../styles/style.css";
                 updateSummaryStats();
                 displayAllIdentifiers();
                 updateULCoverage();
+                updateULAlignment();
                 resultsContainer.classList.remove("hidden");
             }
 
@@ -744,15 +807,14 @@ import "../styles/style.css";
             }
 
             function showTermDistribution(term) {
-                // Afficher la colonne du chart
-                const tableColumn = document.getElementById("tableColumn");
-                const chartColumn = document.getElementById("chartColumn");
-                
-                tableColumn.classList.add("lg:w-2/3");
-                chartColumn.classList.remove("hidden");
-                
                 // Mettre à jour le nom du terme sélectionné
                 document.getElementById("selectedTermName").textContent = term;
+                
+                // Palette de couleurs pour le graphique
+                const colors = [
+                    '#4F46E5', '#7C3AED', '#EC4899', '#F59E0B', '#10B981',
+                    '#3B82F6', '#8B5CF6', '#EF4444', '#F97316', '#14B8A6'
+                ];
                 
                 // Préparer les données pour le camembert
                 const fileData = [];
@@ -840,7 +902,7 @@ import "../styles/style.css";
                 // Trier par nombre d'occurrences décroissant
                 fileData.sort((a, b) => b.occurrences - a.occurrences);
                 
-                // Créer le graphique
+                // Créer le graphique avec les couleurs correspondantes
                 const chart = new CanvasJS.Chart("pieChartContainer", {
                     animationEnabled: true,
                     title: {
@@ -858,6 +920,7 @@ import "../styles/style.css";
                         dataPoints: fileData.map((item, index) => ({
                             name: item.name,
                             y: item.occurrences,
+                            color: colors[index % colors.length]
                         }))
                     }]
                 });
@@ -868,6 +931,7 @@ import "../styles/style.css";
                 updateChartLegend(fileData);
                 
                 // Scroll vers le chart
+                const chartColumn = document.getElementById("chartColumn");
                 chartColumn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
 
@@ -916,30 +980,6 @@ import "../styles/style.css";
                         </div>
                     `;
                 }).join("");
-            }
-
-            function hideChart() {
-                const tableColumn = document.getElementById("tableColumn");
-                const chartColumn = document.getElementById("chartColumn");
-                
-                tableColumn.classList.remove("lg:w-2/3");
-                chartColumn.classList.add("hidden");
-                
-                // Réinitialiser le chart avec le placeholder
-                document.getElementById("pieChartContainer").innerHTML = `
-                    <div class="flex items-center justify-center h-full">
-                        <div class="text-center">
-                            <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path>
-                            </svg>
-                            <p class="text-gray-500 font-medium">Select a term to view distribution</p>
-                            <p class="text-sm text-gray-400 mt-2">Click on any row in the table</p>
-                        </div>
-                    </div>
-                `;
-                document.getElementById("chartLegend").innerHTML = "";
-                document.getElementById("selectedTermName").textContent = "";
             }
 
             function updateSortIndicators() {
@@ -1035,6 +1075,7 @@ import "../styles/style.css";
                     // Mettre à jour l'affichage
                     displayAllIdentifiers();
                     updateULCoverage();
+                    updateULAlignment();
                 } catch (error) {
                     showError(
                         `Failed to add identifier: ${error.message || error}`,
@@ -1084,7 +1125,6 @@ import "../styles/style.css";
             selectFolderBtn.addEventListener("click", selectFolder);
             clearSelectionBtn.addEventListener("click", clearSelection);
             analyzeBtn.addEventListener("click", analyze);
-            document.getElementById("closeChartBtn").addEventListener("click", hideChart);
 
             // Écouteurs pour les boutons de tri
             document.addEventListener('click', (event) => {

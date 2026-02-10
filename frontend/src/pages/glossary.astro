@@ -127,24 +127,6 @@ import "../styles/style.css";
                         </h4>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-900 mb-2">
-                                Bounding context <span class="text-red-600">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                id="boundingContextInput"
-                                placeholder="Enter bounding context (e.g., 'Artificial Intelligence', 'Web Development')"
-                                list="boundingContextList"
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all bg-white"
-                            />
-                            <datalist id="boundingContextList">
-                            </datalist>
-                            <p id="boundingContextError" class="text-red-600 text-sm mt-1 hidden">
-                                This field is required!
-                            </p>
-                        </div>
-
-                        <div>
                             <label
                                 class="block text-sm font-medium text-gray-900 mb-2"
                             >
@@ -160,6 +142,24 @@ import "../styles/style.css";
                                 id="termError"
                                 class="text-red-600 text-sm mt-1 hidden"
                             >
+                                This field is required!
+                            </p>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-900 mb-2">
+                                Bounding context <span class="text-red-600">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                id="boundingContextInput"
+                                placeholder="Enter bounding context (e.g., 'Artificial Intelligence', 'Web Development')"
+                                list="boundingContextList"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all bg-white"
+                            />
+                            <datalist id="boundingContextList">
+                            </datalist>
+                            <p id="boundingContextError" class="text-red-600 text-sm mt-1 hidden">
                                 This field is required!
                             </p>
                         </div>
