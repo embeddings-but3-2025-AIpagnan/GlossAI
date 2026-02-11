@@ -6,7 +6,10 @@ from pathlib import Path
 from re import Pattern, compile
 
 import tree_sitter_java as tsjava
+import tree_sitter_javascript as tsjavascript
 import tree_sitter_python as tspython
+import tree_sitter_rust as tsrust
+import tree_sitter_typescript as tstypescript
 from tree_sitter import Language, Node, Parser
 
 logger = logging.getLogger(__name__)
@@ -51,6 +54,25 @@ DEFAULT_CONFIG = {
             "enum_declaration",
         ],
         [],
+    ),
+    
+    "rust": LanguageConfig(
+        Language(tsrust.language()),
+        ["rs"],
+        [
+            "struct_item",
+            "enum_item",
+            "function_item",
+            "impl_item",
+            "trait_item",
+            "const_item",
+            "static_item",
+            "type_item",
+            "function_signature_item",
+            "parameter",
+            "field_declaration",
+        ],
+        [compile(pattern) for pattern in ["self", "Self", "super", "crate"]],
     ),
     "python": LanguageConfig(
         Language(tspython.language()),
@@ -173,7 +195,7 @@ def analyze_directory(path: Path) -> DirectoryResults:
 
 def main() -> None:
     results = analyze_directory(
-        Path("/home/zacharie/Downloads/Tennis-Refactoring-Kata-main/python"),
+        Path("/home/malo/Téléchargements/test"),
     )
     
     print("=" * 80)
