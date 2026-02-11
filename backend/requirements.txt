@@ -5,3 +5,6 @@ pyinstaller
 tree-sitter
 tree-sitter-java
 tree-sitter-python
+tree-sitter-rust
+tree-sitter-javascript
+tree-sitter-typescript
