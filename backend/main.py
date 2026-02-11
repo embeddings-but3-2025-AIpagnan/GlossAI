@@ -5,6 +5,7 @@ from pathlib import Path
 import uvicorn
 from ai import get_synonyms
 from fastapi import FastAPI, HTTPException
+from import_export import Glossary, export
 from parser import analyze_directory, analyze_file
 from pydantic import BaseModel
 
@@ -74,6 +75,11 @@ async def analyze_folder_route(path: str) -> DirectoryAnalyzeResponse:
         },
         names=result.words,
     )
+
+
+@app.post("/api/export")
+async def export_route(format: str, glossary: Glossary) -> str:
+    return export(format, glossary)
 
 
 @app.post("/shutdown")

@@ -163,6 +163,51 @@ async fn analyze_folder(path: String) -> Result<FolderAnalysisResults, String> {
         .map_err(|e| format!("Failed to parse backend response: {e}"))
 }
 
+#[derive(Deserialize, Serialize)]
+struct Term {
+    term: String,
+    definition: String,
+    bounding_context: String,
+    synonyms: Vec<String>,
+}
+
+#[derive(Deserialize, Serialize)]
+struct Glossary {
+    name: String,
+    description: String,
+    terms: Vec<Term>,
+}
+
+#[tauri::command]
+async fn export(format: String, glossary: Glossary) -> Result<String, String> {
+    let client = reqwest::Client::new();
+    let url = Url::parse_with_params(
+        &format!("http://127.0.0.1:{}/api/export", BACKEND_PORT),
+        &[("format", format)],
+    )
+    .map_err(|e| format!("Failed to build URL: {e}"))?;
+
+    let response = client
+        .post(url)
+        .header("Content-Type", "application/json")
+        .json(&glossary)
+        .send()
+        .await
+        .map_err(|e| format!("Failed to send request to backend: {e}"))?;
+
+    if response.status().is_server_error() {
+        return Err(response
+            .text()
+            .await
+            .map_err(|e| format!("Failed to parse backend response with server error: {e}"))?);
+    }
+
+    response
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse backend response: {e}"))
+}
+
 fn main() {
     let context = tauri::generate_context!();
 
@@ -176,7 +221,8 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             suggest_synonyms,
             analyze_file,
-            analyze_folder
+            analyze_folder,
+            export
         ])
         .setup(|app| {
             let app_handle = app.handle().clone();

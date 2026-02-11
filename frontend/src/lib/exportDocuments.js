@@ -1,48 +1,13 @@
-function generateMarkdown(data, headers = ["Word", "Definition", "Bounding Context", "Synonyms"], title = "Glossary", description = "") {
-  if (!Array.isArray(data) || data.some(row => !Array.isArray(row) || row.length !== headers.length)) {
-    throw new Error(`Invalid data format. Expected ${headers.length} columns but got varying row lengths.`);
-  }
+const { invoke } = window.__TAURI__.core;
 
-  let markdown = `# ${title}\n\n`;
-
-  // Ajouter la description si elle existe
-  if (description) {
-    markdown += `**Description:** ${description}\n\n`;
-  }
-
-  // Ajouter les métadonnées
-  markdown += `**Export Date:** ${new Date().toLocaleDateString()}\n`;
-  markdown += `**Number of Terms:** ${data.length}\n\n`;
-
-  const headerRow = `| ${headers.join(" | ")} |`;
-  const separatorRow = `| ${headers.map(() => "---").join(" | ")} |`;
-
-  const dataRows = data.map(row => {
-    const formattedRow = row.map((cell, index) => {
-      // Traitement spécial pour la colonne des synonymes (dernière colonne)
-      if (index === headers.length - 1) { // Dernière colonne = Synonyms
-        if (Array.isArray(cell)) {
-          return cell.length > 0 ? cell.join(", ") : "-";
-        }
-        return String(cell || "-");
-      }
-      
-      // Pour les autres colonnes (Word, Definition, Bounding Context)
-      if (Array.isArray(cell)) {
-        return cell.length > 0 ? cell.join(", ") : "-";
-      }
-      return String(cell || "-").replace(/\n/g, " ").replace(/\s+/g, " ").trim();
-    });
-    return `| ${formattedRow.join(" | ")} |`;
-  }).join("\n");
-
-  const markdownTable = markdown + headerRow + "\n" + separatorRow + "\n" + dataRows;
+async function generateMarkdown(glossary) {
+  const markdownTable = await generateMarkdownString(glossary);
 
   const blob = new Blob([markdownTable], { type: "text/markdown;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `${title.toLowerCase().replace(/\s+/g, '_')}.md`;
+  link.download = `${glossary.name.toLowerCase().replace(/\s+/g, '_')}.md`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -111,35 +76,14 @@ function parseMarkdown(markdownContent) {
   };
 }
 
-function generateJSON(data, headers = ["Word", "Definition", "Bounding Context", "Synonyms"], title = "Glossary", description = "") {
-  const structuredData = {
-    glossary: {
-      name: title,
-      description: description,
-      exportDate: new Date().toISOString(),
-      termCount: data.length,
-      format: {
-        version: "1.1",
-        headers: headers
-      }
-    },
-    terms: data.map((row, index) => {
-      const term = {
-        id: index + 1,
-        word: row[0],
-        definition: row[1],
-        boundingContext: row[2] || "",
-        synonyms: Array.isArray(row[3]) ? row[3] : (typeof row[3] === 'string' ? row[3].split(',').map(s => s.trim()).filter(s => s) : [])
-      };
-      return term;
-    })
-  };
+async function generateJSON(glossary) {
+  const data = await generateJSONString(glossary);
 
-  const blob = new Blob([JSON.stringify(structuredData, null, 2)], { type: "application/json" });
+  const blob = new Blob([data], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `${title.toLowerCase().replace(/\s+/g, '_')}.json`;
+  link.download = `${glossary.name.toLowerCase().replace(/\s+/g, '_')}.json`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -227,73 +171,19 @@ function parseJSON(jsonContent) {
 }
 
 // Fonctions pour la prévisualisation (retournent le contenu sans télécharger)
-function generateMarkdownString(data, headers = ["Word", "Definition", "Bounding Context", "Synonyms"], title = "Glossary", description = "") {
-  if (!Array.isArray(data) || data.some(row => !Array.isArray(row) || row.length !== headers.length)) {
-    throw new Error(`Invalid data format. Expected ${headers.length} columns but got varying row lengths.`);
-  }
-
-  let markdown = `# ${title}\n\n`;
-
-  // Ajouter la description si elle existe
-  if (description) {
-    markdown += `**Description:** ${description}\n\n`;
-  }
-
-  // Ajouter les métadonnées
-  markdown += `**Export Date:** ${new Date().toLocaleDateString()}\n`;
-  markdown += `**Number of Terms:** ${data.length}\n\n`;
-
-  const headerRow = `| ${headers.join(" | ")} |`;
-  const separatorRow = `| ${headers.map(() => "---").join(" | ")} |`;
-
-  const dataRows = data.map(row => {
-    const formattedRow = row.map((cell, index) => {
-      // Traitement spécial pour la colonne des synonymes (dernière colonne)
-      if (index === headers.length - 1) { // Dernière colonne = Synonyms
-        if (Array.isArray(cell)) {
-          return cell.length > 0 ? cell.join(", ") : "-";
-        }
-        return String(cell || "-");
-      }
-      
-      // Pour les autres colonnes (Word, Definition, Bounding Context)
-      if (Array.isArray(cell)) {
-        return cell.length > 0 ? cell.join(", ") : "-";
-      }
-      return String(cell || "-").replace(/\n/g, " ").replace(/\s+/g, " ").trim();
-    });
-    return `| ${formattedRow.join(" | ")} |`;
-  }).join("\n");
-
-  return markdown + headerRow + "\n" + separatorRow + "\n" + dataRows;
+async function generateMarkdownString(glossary) {
+  return await invoke("export", {
+    format: "markdown",
+    glossary,
+  });
 }
 
-function generateJSONString(data, headers = ["Word", "Definition", "Bounding Context", "Synonyms"], title = "Glossary", description = "") {
-  const structuredData = {
-    glossary: {
-      name: title,
-      description: description,
-      exportDate: new Date().toISOString(),
-      termCount: data.length,
-      format: {
-        version: "1.1",
-        headers: headers
-      }
-    },
-    terms: data.map((row, index) => {
-      const term = {
-        id: index + 1,
-        word: row[0],
-        definition: row[1],
-        boundingContext: row[2] || "",
-        synonyms: Array.isArray(row[3]) ? row[3] : (typeof row[3] === 'string' ? row[3].split(',').map(s => s.trim()).filter(s => s) : [])
-      };
-      return term;
-    })
-  };
-
-  return JSON.stringify(structuredData, null, 2);
+async function generateJSONString(glossary) {
+  return await invoke("export", {
+    format: "json",
+    glossary,
+  });
 }
 
 // Exportez les fonctions pour les rendre disponibles
-export { generateMarkdown, parseMarkdown, generateJSON, parseJSON, generateMarkdownString, generateJSONString };
+export { generateJSON, generateJSONString, generateMarkdown, generateMarkdownString, parseJSON, parseMarkdown };
