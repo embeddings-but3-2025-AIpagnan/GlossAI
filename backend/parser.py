@@ -56,7 +56,6 @@ DEFAULT_CONFIG = {
         ],
         [],
     ),
-    
     "rust": LanguageConfig(
         Language(tsrust.language()),
         ["rs"],
@@ -186,6 +185,7 @@ def find_files(path: Path) -> list[Path]:
                 for file in path.rglob(f"*.{ext}")
                 if file.is_file()
                 if not any(part.startswith(".") for part in file.parts)
+                if "target" not in file.parts
             )
 
     return files
