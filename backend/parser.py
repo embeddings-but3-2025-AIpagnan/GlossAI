@@ -1,5 +1,4 @@
 import logging
-import re
 from collections import Counter
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -8,6 +7,7 @@ from re import Pattern, compile
 
 import tree_sitter_java as tsjava
 import tree_sitter_javascript as tsjavascript
+import tree_sitter_php as tsphp
 import tree_sitter_python as tspython
 import tree_sitter_rust as tsrust
 import tree_sitter_typescript as tstypescript
@@ -105,6 +105,22 @@ DEFAULT_CONFIG = {
         ],
         [compile(pattern) for pattern in ["self", "Self", "super", "crate"]],
     ),
+    "php": LanguageConfig(
+        Language(tsphp.language_php()),
+        ["php", "php5", "php7", "php8", "phtml"],
+        [
+            "class_declaration",
+            "interface_declaration",
+            "trait_declaration",
+            "enum_declaration",
+            "function_definition",
+            "method_declaration",
+            "variable_name",
+            "property_declaration",
+            "const_declaration",
+        ],
+        [compile(pattern) for pattern in [r"\$this", r"\$self", "__.*__"]],
+    ),
     "python": LanguageConfig(
         Language(tspython.language()),
         ["py"],
@@ -171,13 +187,6 @@ def traverse(node: Node, names: list[str], node_types: list[str]) -> None:
         traverse(child, names, node_types)
 
 
-def split_name(name: str) -> list[str]:
-    name = name.replace("_", " ").replace("-", " ")
-    name = re.sub(r"([a-z])([A-Z])", r"\1 \2", name)
-    name = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1 \2", name)
-    return [name for name in name.split(" ") if name]
-
-
 def analyze_code(
     code: bytes,
     language_name: str,
@@ -189,7 +198,6 @@ def analyze_code(
     names: list[str] = []
     traverse(tree.root_node, names, language.nodes)
 
-    names = [name.lower() for fullname in names for name in split_name(fullname)]
     names = [
         name
         for name in names
@@ -216,7 +224,6 @@ def find_files(path: Path) -> list[Path]:
                 for file in path.rglob(f"*.{ext}")
                 if file.is_file()
                 if not any(part.startswith(".") for part in file.parts)
-                if "target" not in file.parts
             )
 
     return files
@@ -235,31 +242,31 @@ def analyze_directory(path: Path) -> DirectoryResults:
 
 def main() -> None:
     results = analyze_directory(
-        Path("/home/malo/Téléchargements/test"),
+        Path("/home/zacharie/Downloads/Tennis-Refactoring-Kata-main/python"),
     )
-
+    
     print("=" * 80)
     print("STATISTIQUES PAR FICHIER")
     print("=" * 80)
-
+    
     for file_path, file_results in results.files.items():
         print(f"\n📄 Fichier: {file_path}")
         print(f"   Langage: {file_results.lang}")
         print(f"   Nombre total de noms: {sum(file_results.words.values())}")
         print(f"   Noms uniques: {len(file_results.words)}")
-
+        
         if file_results.words:
-            print("   Top 10 des noms les plus fréquents:")
+            print(f"   Top 10 des noms les plus fréquents:")
             for name, count in file_results.words.most_common(10):
                 print(f"      - {name}: {count}")
-
+    
     print("\n" + "=" * 80)
     print("STATISTIQUES GLOBALES DU RÉPERTOIRE")
     print("=" * 80)
     print(f"Nombre total de fichiers analysés: {len(results.files)}")
     print(f"Nombre total de noms: {sum(results.words.values())}")
     print(f"Noms uniques dans tout le répertoire: {len(results.words)}")
-    print("\nTop 20 des noms les plus fréquents (tous fichiers confondus):")
+    print(f"\nTop 20 des noms les plus fréquents (tous fichiers confondus):")
     for name, count in results.words.most_common(20):
         print(f"   - {name}: {count}")
 
