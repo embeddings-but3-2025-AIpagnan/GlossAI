@@ -74,7 +74,6 @@ def import_markdown(content: str) -> Glossary:
     )
 
     table_lines = [line for line in lines if line.startswith("|")][2:]
-    print(table_lines)
 
     terms = []
     for line in table_lines:
