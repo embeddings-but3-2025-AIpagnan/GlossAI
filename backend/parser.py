@@ -55,7 +55,37 @@ DEFAULT_CONFIG = {
         ],
         [],
     ),
-    
+    "javascript": LanguageConfig(
+        Language(tsjavascript.language()),
+        ["js", "jsx", "mjs", "cjs"],
+        [
+            "class_declaration",
+            "function_declaration",
+            "method_definition",
+            "variable_declarator",
+            "formal_parameters",
+            "arrow_function",
+            "function_expression",
+        ],
+        [compile(pattern) for pattern in ["this", "super", "prototype"]],
+    ),
+    "typescript": LanguageConfig(
+        Language(tstypescript.language_typescript()),
+        ["ts", "tsx"],
+        [
+            "class_declaration",
+            "function_declaration",
+            "method_definition",
+            "variable_declarator",
+            "formal_parameters",
+            "arrow_function",
+            "function_signature",
+            "interface_declaration",
+            "type_alias_declaration",
+            "enum_declaration",
+        ],
+        [compile(pattern) for pattern in ["this", "super", "prototype"]],
+    ),
     "rust": LanguageConfig(
         Language(tsrust.language()),
         ["rs"],
