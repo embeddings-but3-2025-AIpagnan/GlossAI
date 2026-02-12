@@ -174,25 +174,21 @@ importConfirmBtn.addEventListener("click", async () => {
                 const { parseMarkdown } = await import(
                     "../src/lib/exportDocuments.js"
                 );
-                const parsedData = parseMarkdown(fileContent);
+                const parsedData = await parseMarkdown(fileContent);
 
                 // Create new glossary from imported data
                 const newGlossary = {
                     id: glossaryManager.nextId++,
-                    name: parsedData.title || "Imported Glossary",
+                    name: parsedData.name || "Imported Glossary",
                     description:
                         parsedData.description ||
                         "Imported from Markdown file",
-                    terms: parsedData.data.map((row, index) => ({
+                    terms: parsedData.terms.map((row, index) => ({
                         id: index + 1,
-                        term: row[0],
-                        definition: row[1],
-                        synonyms:
-                            typeof row[2] === "string" ? row[2]
-                                .split(",")
-                                .map((s) => s.trim())
-                                .filter((s) => s)
-                            : Array.isArray(row[2]) ? row[2] : [],
+                        term: row.term,
+                        definition: row.definition,
+                        boundingContext: row.bounding_context,
+                        synonyms: row.synonyms,
                     })),
                 };
 
@@ -204,21 +200,20 @@ importConfirmBtn.addEventListener("click", async () => {
                 const { parseJSON } = await import(
                     "../src/lib/exportDocuments.js"
                 );
-                const parsedData = parseJSON(fileContent);
+                const parsedData = await parseJSON(fileContent);
 
                 const newGlossary = {
                     id: glossaryManager.nextId++,
-                    name: parsedData.title || "Imported Glossary",
+                    name: parsedData.name || "Imported Glossary",
                     description:
                         parsedData.description ||
                         "Imported from JSON file",
-                    terms: parsedData.data.map((row, index) => ({
+                    terms: parsedData.terms.map((row, index) => ({
                         id: index + 1,
-                        term: row[0],
-                        definition: row[1],
-                        synonyms: Array.isArray(row[2])
-                            ? row[2]
-                            : [],
+                        term: row.term,
+                        definition: row.definition,
+                        boundingContext: row.bounding_context,
+                        synonyms: row.synonyms,
                     })),
                 };
 

@@ -2,6 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use std::{
     collections::HashMap,
     process::Command,
@@ -167,7 +168,7 @@ async fn analyze_folder(path: String) -> Result<FolderAnalysisResults, String> {
 struct Term {
     term: String,
     definition: String,
-    bounding_context: String,
+    bounding_context: Option<String>,
     synonyms: Vec<String>,
 }
 
@@ -208,6 +209,38 @@ async fn export(format: String, glossary: Glossary) -> Result<String, String> {
         .map_err(|e| format!("Failed to parse backend response: {e}"))
 }
 
+#[tauri::command]
+async fn import(format: String, content: String) -> Result<Glossary, String> {
+    let client = reqwest::Client::new();
+    let url = Url::parse_with_params(
+        &format!("http://127.0.0.1:{}/api/import", BACKEND_PORT),
+        &[("format", format)],
+    )
+    .map_err(|e| format!("Failed to build URL: {e}"))?;
+
+    let response = client
+        .post(url)
+        .header("Content-Type", "application/json")
+        .json(&json!({
+            "content": content
+        }))
+        .send()
+        .await
+        .map_err(|e| format!("Failed to send request to backend: {e}"))?;
+
+    if response.status().is_server_error() {
+        return Err(response
+            .text()
+            .await
+            .map_err(|e| format!("Failed to parse backend response with server error: {e}"))?);
+    }
+
+    response
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse backend response: {e}"))
+}
+
 fn main() {
     let context = tauri::generate_context!();
 
@@ -222,7 +255,8 @@ fn main() {
             suggest_synonyms,
             analyze_file,
             analyze_folder,
-            export
+            export,
+            import
         ])
         .setup(|app| {
             let app_handle = app.handle().clone();

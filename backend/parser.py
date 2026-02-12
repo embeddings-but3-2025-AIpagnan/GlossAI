@@ -1,4 +1,5 @@
 import logging
+import re
 from collections import Counter
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -170,6 +171,13 @@ def traverse(node: Node, names: list[str], node_types: list[str]) -> None:
         traverse(child, names, node_types)
 
 
+def split_name(name: str) -> list[str]:
+    name = name.replace("_", " ").replace("-", " ")
+    name = re.sub(r"([a-z])([A-Z])", r"\1 \2", name)
+    name = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1 \2", name)
+    return [name for name in name.split(" ") if name]
+
+
 def analyze_code(
     code: bytes,
     language_name: str,
@@ -181,6 +189,7 @@ def analyze_code(
     names: list[str] = []
     traverse(tree.root_node, names, language.nodes)
 
+    names = [name.lower() for fullname in names for name in split_name(fullname)]
     names = [
         name
         for name in names
@@ -207,6 +216,7 @@ def find_files(path: Path) -> list[Path]:
                 for file in path.rglob(f"*.{ext}")
                 if file.is_file()
                 if not any(part.startswith(".") for part in file.parts)
+                if "target" not in file.parts
             )
 
     return files
@@ -227,29 +237,29 @@ def main() -> None:
     results = analyze_directory(
         Path("/home/malo/Téléchargements/test"),
     )
-    
+
     print("=" * 80)
     print("STATISTIQUES PAR FICHIER")
     print("=" * 80)
-    
+
     for file_path, file_results in results.files.items():
         print(f"\n📄 Fichier: {file_path}")
         print(f"   Langage: {file_results.lang}")
         print(f"   Nombre total de noms: {sum(file_results.words.values())}")
         print(f"   Noms uniques: {len(file_results.words)}")
-        
+
         if file_results.words:
-            print(f"   Top 10 des noms les plus fréquents:")
+            print("   Top 10 des noms les plus fréquents:")
             for name, count in file_results.words.most_common(10):
                 print(f"      - {name}: {count}")
-    
+
     print("\n" + "=" * 80)
     print("STATISTIQUES GLOBALES DU RÉPERTOIRE")
     print("=" * 80)
     print(f"Nombre total de fichiers analysés: {len(results.files)}")
     print(f"Nombre total de noms: {sum(results.words.values())}")
     print(f"Noms uniques dans tout le répertoire: {len(results.words)}")
-    print(f"\nTop 20 des noms les plus fréquents (tous fichiers confondus):")
+    print("\nTop 20 des noms les plus fréquents (tous fichiers confondus):")
     for name, count in results.words.most_common(20):
         print(f"   - {name}: {count}")
 
