@@ -94,7 +94,7 @@ import "../styles/style.css";
                                 >Analyze Single File</span
                             >
                             <span class="text-sm text-gray-500 mt-1"
-                                >.java and .py files only</span
+                                >.java, .py, .rs, .js, .jsx, .php files</span
                             >
                         </button>
 
@@ -441,7 +441,7 @@ import "../styles/style.css";
                         filters: [
                             {
                                 name: "Fichiers de code",
-                                extensions: ["java", "py"],
+                                extensions: ["java", "py", "rs", "js", "jsx", "php"],
                             },
                         ],
                     });
@@ -746,14 +746,12 @@ import "../styles/style.css";
                 
                 identifiersTable.innerHTML = sortedData
                     .map(({ name, count, inGlossary }) => {
-                        // Déterminer la couleur de la ligne en fonction du nombre d'occurrences
+                        // Déterminer la couleur de la ligne en fonction de la présence dans le glossaire
                         let rowColorClass;
-                        if (count > 5) {
-                            rowColorClass = 'bg-red-50 hover:bg-red-100 cursor-pointer';
-                        } else if (count > 2) {
-                            rowColorClass = 'bg-yellow-50 hover:bg-yellow-100 cursor-pointer';
-                        } else {
+                        if (inGlossary) {
                             rowColorClass = 'bg-green-50 hover:bg-green-100 cursor-pointer';
+                        } else {
+                            rowColorClass = 'bg-red-50 hover:bg-red-100 cursor-pointer';
                         }
                         
                         return `
