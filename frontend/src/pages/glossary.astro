@@ -1,5 +1,5 @@
 ---
-// src/pages/index.astro
+// src/pages/glossary.astro
 import "../styles/global.css";
 import "../styles/style.css";
 ---
@@ -500,7 +500,7 @@ import "../styles/style.css";
                 }
             }
 
-            // Modifiez la fonction renderTable pour inclure le bounding context
+            // Modifiez la fonction renderTable pour inclure le bounding context et capitaliser les termes
             function renderTable() {
                 const tbody = document.getElementById("glossaryTable");
 
@@ -510,12 +510,18 @@ import "../styles/style.css";
                         ? t.slice(0, 20) + "..."
                         : t;
 
+                // Fonction pour capitaliser la première lettre
+                const capitalize = (str) => {
+                    if (!str) return str;
+                    return str.charAt(0).toUpperCase() + str.slice(1);
+                };
+
                 tbody.innerHTML = terms
                     .map(
                         (term) => `
                     <tr class="hover:bg-gray-50 transition-colors">
                         <td class="px-6 py-4 font-medium text-gray-900">
-                            ${escapeHtml(shorten(term.term))}
+                            ${escapeHtml(capitalize(shorten(term.term)))}
                         </td>
                         <td class="px-6 py-4 text-gray-700">
                             <div 
